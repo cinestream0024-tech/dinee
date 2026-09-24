@@ -1,0 +1,56 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.commandcode
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Local configuration and credentials (only sanitized examples are tracked)
+.env
+.env.*
+!.env.example
+auth.json
+*.pem
+*.key
+*.p12
+*.sqlite
+*.sqlite-*
+*.sql
+
+# Laravel generated files
+vendor/
+backend/storage/*.key
+backend/storage/logs/*
+backend/storage/framework/cache/data/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/bootstrap/cache/*.php
+backend/public/storage
+backend/public/hot
+backend/public/build/
+.phpunit.result.cache
+.phpunit.cache/
+coverage/
+playwright-report/
+test-results/
+.vite/
+.DS_Store
+Thumbs.db
+/.local/
