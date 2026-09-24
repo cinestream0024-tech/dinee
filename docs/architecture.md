@@ -1,6 +1,6 @@
 # DINEE Platform — architecture et inspection
 
-Statut : décisions de phase 0, 24 septembre 2026. Architecture cible, non encore mise en place. Voir [le cadrage](product-mvp.md) et [le domaine](domain-model.md).
+Statut : décisions de phase 0, complétées par les fondations de phase 1 le 24 septembre 2026. L’inventaire ci-dessous décrit l’état initial ; voir [phase 1](phase-1.md) et [développement](development.md) pour l’état implémenté. Voir [le cadrage](product-mvp.md) et [le domaine](domain-model.md).
 
 ## État constaté du workspace
 

@@ -1,6 +1,6 @@
 # DINEE Platform — modèle de domaine
 
-Statut : conception de phase 0, non migrée. Voir [architecture](architecture.md) et [périmètre produit](product-mvp.md). Les champs ci-dessous définissent les responsabilités et invariants ; les migrations seront introduites selon les phases autorisées.
+Statut : conception de phase 0 ; schéma initial migré en phase 1. Les transitions et fonctionnalités décrites restent à livrer dans leurs phases respectives. Voir [architecture](architecture.md) et [périmètre produit](product-mvp.md). Les champs ci-dessous définissent les responsabilités et invariants ; les migrations seront introduites selon les phases autorisées.
 
 ## Entités et responsabilités
 
