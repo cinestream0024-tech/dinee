@@ -7,14 +7,16 @@ import LoginPage from "@/pages/public/LoginPage";
 import PlaceholderPage from "@/pages/public/PlaceholderPage";
 import FoundationPage from "@/pages/admin/FoundationPage";
 import MemberHomePage from "@/pages/member/MemberHomePage";
+
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signin" element={<Navigate to="/login" replace />} />
+
         <Route element={<PublicLayout />}>
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signin" element={<Navigate to="/login" replace />} />
           <Route
             path="/invitation/:token"
             element={<PlaceholderPage kind="invitation" />}
@@ -25,6 +27,7 @@ export default function App() {
           />
           <Route path="*" element={<PlaceholderPage kind="notFound" />} />
         </Route>
+
         <Route element={<RequireRole role="admin" />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<FoundationPage />} />
@@ -38,6 +41,7 @@ export default function App() {
             />
           </Route>
         </Route>
+
         <Route element={<RequireRole role="member" />}>
           <Route path="/member" element={<MemberLayout />}>
             <Route index element={<MemberHomePage />} />

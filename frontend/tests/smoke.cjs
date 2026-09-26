@@ -14,7 +14,10 @@ fs.mkdirSync(output, { recursive: true });
     headless: true,
     executablePath: process.env.DINEE_CHROMIUM_EXECUTABLE || undefined,
     args: baseHostname.endsWith(".test")
-      ? [`--host-resolver-rules=MAP ${baseHostname} 127.0.0.1`, "--no-proxy-server"]
+      ? [
+          `--host-resolver-rules=MAP ${baseHostname} 127.0.0.1`,
+          "--no-proxy-server",
+        ]
       : [],
   });
   try {
@@ -42,6 +45,12 @@ fs.mkdirSync(output, { recursive: true });
         "Horizontal overflow",
       );
     }
+    await page.goto(base + "/login");
+    await noOverflow();
+    await page.screenshot({
+      path: path.join(output, "login-desktop.png"),
+      fullPage: true,
+    });
     await login("yannick@dinee.test");
     await page.waitForURL(base + "/admin");
     await page
@@ -66,19 +75,26 @@ fs.mkdirSync(output, { recursive: true });
     );
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole("button", { name: "Menu", exact: true }).click();
-    await page.getByRole("link", { name: "Éditions", exact: true }).click();
+    await page
+      .getByRole("complementary", { name: "Navigation administrative" })
+      .getByRole("link", { name: "Éditions", exact: true })
+      .click();
     await page.waitForURL(base + "/admin/events");
-    assert.equal(
-      await page
-        .getByRole("button", { name: "Menu", exact: true })
-        .getAttribute("aria-expanded"),
-      "false",
-    );
+    await page
+      .locator('button[aria-label="Menu"][aria-expanded="false"]')
+      .waitFor();
+    await page.waitForTimeout(400);
     await noOverflow();
     await page.screenshot({
       path: path.join(output, "admin-mobile.png"),
       fullPage: true,
     });
+    await page
+      .getByRole("button", { name: "Actions du compte", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Menu du compte", exact: true })
+      .click();
     await page
       .getByRole("button", { name: "Se déconnecter", exact: true })
       .click();

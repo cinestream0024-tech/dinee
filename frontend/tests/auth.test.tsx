@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { AppWrapper } from "../src/components/common/PageMeta";
+import { LanguageProvider } from "../src/context/LanguageContext";
+import { ThemeProvider } from "../src/context/ThemeContext";
 import LoginPage from "../src/pages/public/LoginPage";
 import RequireRole from "../src/features/auth/RequireRole";
 import { useLogout } from "../src/features/auth/auth";
@@ -27,28 +29,32 @@ function mount(path = "/login") {
   }
   render(
     <QueryClientProvider client={client}>
-      <AppWrapper>
-        <MemoryRouter initialEntries={[path]}>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/forbidden" element={<div>Denied</div>} />
-            <Route element={<RequireRole role="admin" />}>
-              <Route
-                path="/admin"
-                element={
-                  <>
-                    <div>Admin area</div>
-                    <Logout />
-                  </>
-                }
-              />
-            </Route>
-            <Route element={<RequireRole role="member" />}>
-              <Route path="/member" element={<div>Member area</div>} />
-            </Route>
-          </Routes>
-        </MemoryRouter>
-      </AppWrapper>
+      <ThemeProvider>
+        <LanguageProvider>
+          <AppWrapper>
+            <MemoryRouter initialEntries={[path]}>
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/forbidden" element={<div>Denied</div>} />
+                <Route element={<RequireRole role="admin" />}>
+                  <Route
+                    path="/admin"
+                    element={
+                      <>
+                        <div>Admin area</div>
+                        <Logout />
+                      </>
+                    }
+                  />
+                </Route>
+                <Route element={<RequireRole role="member" />}>
+                  <Route path="/member" element={<div>Member area</div>} />
+                </Route>
+              </Routes>
+            </MemoryRouter>
+          </AppWrapper>
+        </LanguageProvider>
+      </ThemeProvider>
     </QueryClientProvider>,
   );
   return client;
