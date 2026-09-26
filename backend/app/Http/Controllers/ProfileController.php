@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ListNetworkRequest;
+use App\Http\Requests\ListProfilesRequest;
 use App\Http\Requests\SaveProfileRequest;
 use App\Http\Resources\ProfileResource;
 use App\Models\Profile;
@@ -10,25 +10,33 @@ use App\Services\ProfileService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
+use Symfony\Component\HttpFoundation\Response;
 
 class ProfileController extends Controller
 {
-    public function index(ListNetworkRequest $request): AnonymousResourceCollection
+    public function index(ListProfilesRequest $request): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', Profile::class);
         $data = $request->validated();
-        $query = Profile::query()->when($data['q'] ?? null, fn ($query, $q) => $query->where(function ($query) use ($q) {
-            foreach (['first_name', 'last_name', 'email', 'company', 'job_title', 'phone'] as $field) {
-                $query->orWhere($field, 'like', '%'.$q.'%');
-            }
-        }))->when($data['availability'] ?? null, fn ($query, $value) => $query->where('availability', $value));
+        $query = Profile::query()
+            ->when($data['q'] ?? null, fn ($query, $q) => $query->where(function ($query) use ($q) {
+                foreach (['first_name', 'last_name', 'email', 'company', 'job_title', 'phone'] as $field) {
+                    $query->orWhere($field, 'like', '%'.$q.'%');
+                }
+            }))
+            ->when($data['availability'] ?? null, fn ($query, $value) => $query->where('availability', $value));
 
-        return ProfileResource::collection($query->orderBy('last_name')->orderBy('first_name')->orderBy('id')->paginate($data['per_page'] ?? 20)->withQueryString());
+        return ProfileResource::collection(
+            $query->orderBy('last_name')->orderBy('first_name')->orderBy('id')
+                ->paginate($data['per_page'] ?? 20)->withQueryString()
+        );
     }
 
-    public function store(SaveProfileRequest $request, ProfileService $service): ProfileResource
+    public function store(SaveProfileRequest $request, ProfileService $service): JsonResponse
     {
-        return new ProfileResource($service->save($request->validated(), $request->user()));
+        return (new ProfileResource($service->save($request->validated(), $request->user())))
+            ->response()
+            ->setStatusCode(Response::HTTP_CREATED);
     }
 
     public function show(Profile $profile): ProfileResource

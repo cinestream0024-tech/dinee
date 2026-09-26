@@ -11,6 +11,8 @@ use Illuminate\Validation\ValidationException;
 
 class ProfileImportService
 {
+    public function __construct(private readonly ProfileService $profiles) {}
+
     private const COLUMNS = ['first_name', 'last_name', 'email', 'phone', 'linkedin_url', 'company', 'job_title', 'sector', 'bio', 'interests', 'looking_for', 'contributions', 'availability'];
 
     public function process(string $csv, ?User $actor = null): array
@@ -61,7 +63,7 @@ class ProfileImportService
                     }
                     if ($actor) {
                         try {
-                            app(ProfileService::class)->save($validator->validated(), $actor, source: ProfileSource::Import);
+                            $this->profiles->save($validator->validated(), $actor, source: ProfileSource::Import);
                             $status = 'created';
                         } catch (ValidationException) {
                             $status = 'duplicate';
