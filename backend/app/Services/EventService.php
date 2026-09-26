@@ -29,8 +29,17 @@ class EventService
                 throw ValidationException::withMessages(['status' => ['invalid_transition']]);
             }
             $startsAt = ! empty($data['starts_at_local']) ? CarbonImmutable::createFromFormat('Y-m-d\TH:i', $data['starts_at_local'], $data['timezone'])->startOfMinute()->utc() : null;
-            if ($status === EventStatus::Upcoming && (! $startsAt || ! $startsAt->isFuture() || empty($data['location']))) {
-                throw ValidationException::withMessages(['starts_at_local' => ['future_event_required'], 'location' => ['location_required']]);
+            if ($status === EventStatus::Upcoming) {
+                $errors = [];
+                if (! $startsAt || ! $startsAt->isFuture()) {
+                    $errors['starts_at_local'] = ['future_event_required'];
+                }
+                if (empty($data['location'])) {
+                    $errors['location'] = ['location_required'];
+                }
+                if ($errors !== []) {
+                    throw ValidationException::withMessages($errors);
+                }
             }
             if ($status === EventStatus::Completed && (! $record->starts_at || $record->starts_at->isFuture())) {
                 throw ValidationException::withMessages(['status' => ['event_not_started']]);

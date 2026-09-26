@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\EventController;
 use App\Http\Controllers\FoundationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfileImportController;
@@ -14,6 +15,7 @@ Route::prefix('v1')->group(function () {
 
         Route::prefix('admin')->middleware('admin')->group(function () {
             Route::get('/foundation', [FoundationController::class, 'admin']);
+            Route::apiResource('events', EventController::class)->only(['index', 'store', 'show', 'update']);
             Route::post('/profiles/import/preview', [ProfileImportController::class, 'preview']);
             Route::post('/profiles/import', [ProfileImportController::class, 'store']);
             Route::apiResource('profiles', ProfileController::class)->only(['index', 'store', 'show', 'update']);
