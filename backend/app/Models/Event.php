@@ -28,4 +28,9 @@ class Event extends Model
     {
         return $this->hasMany(EventSelection::class);
     }
+
+    public function activeSelections(): HasMany
+    {
+        return $this->selections()->whereNull('withdrawn_at');
+    }
 }
