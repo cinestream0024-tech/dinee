@@ -7,6 +7,7 @@ export default defineConfig({
     host: "127.0.0.1",
     port: 5173,
     strictPort: true,
+    allowedHosts: ["ledinee.test"],
     proxy: {
       "/api": "http://127.0.0.1:8000",
       "/sanctum": "http://127.0.0.1:8000",

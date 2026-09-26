@@ -9,7 +9,14 @@ if (!password)
 const output = path.resolve(__dirname, "../../.local/evidence");
 fs.mkdirSync(output, { recursive: true });
 (async () => {
-  const browser = await chromium.launch({ headless: true, executablePath: process.env.DINEE_CHROMIUM_EXECUTABLE || undefined });
+  const baseHostname = new URL(base).hostname;
+  const browser = await chromium.launch({
+    headless: true,
+    executablePath: process.env.DINEE_CHROMIUM_EXECUTABLE || undefined,
+    args: baseHostname.endsWith(".test")
+      ? [`--host-resolver-rules=MAP ${baseHostname} 127.0.0.1`, "--no-proxy-server"]
+      : [],
+  });
   try {
     const context = await browser.newContext({
       viewport: { width: 1440, height: 1000 },

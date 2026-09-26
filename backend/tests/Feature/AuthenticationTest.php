@@ -75,9 +75,11 @@ class AuthenticationTest extends TestCase
 
     public function test_cors_does_not_authorize_arbitrary_origins(): void
     {
+        $frontendOrigin = config('cors.allowed_origins')[0];
+
         $this->withHeaders(['Origin' => 'https://untrusted.example', 'Access-Control-Request-Method' => 'POST'])
-            ->options('/api/v1/auth/login')->assertHeader('Access-Control-Allow-Origin', 'http://127.0.0.1:5173');
-        $this->withHeaders(['Origin' => 'http://127.0.0.1:5173', 'Access-Control-Request-Method' => 'POST'])
-            ->options('/api/v1/auth/login')->assertHeader('Access-Control-Allow-Origin', 'http://127.0.0.1:5173');
+            ->options('/api/v1/auth/login')->assertHeader('Access-Control-Allow-Origin', $frontendOrigin);
+        $this->withHeaders(['Origin' => $frontendOrigin, 'Access-Control-Request-Method' => 'POST'])
+            ->options('/api/v1/auth/login')->assertHeader('Access-Control-Allow-Origin', $frontendOrigin);
     }
 }

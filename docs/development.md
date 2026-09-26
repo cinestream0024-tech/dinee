@@ -5,6 +5,24 @@
 Windows / Laragon : PHP 8.3.30, Composer 2.10.3, Node 22.22.0, npm 10.9.4, MySQL 8.4.3.
 Versions résolues en phase 1 : Laravel 13.33.0, Sanctum 4.3.3, Vite 8.2.2. Les lockfiles font autorité.
 
+## Accès local via ledinee.test
+
+Cette machine est configurée pour ouvrir l'application sur [http://ledinee.test](http://ledinee.test). Le fichier `hosts` résout le domaine vers `127.0.0.1` et Apache sert le build React depuis `frontend/dist`. Les chemins `/api` et `/sanctum` sont relayés vers Laravel sur `127.0.0.1:8000`.
+
+Après avoir démarré Apache et MySQL dans Laragon, lancer à la racine :
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-local.ps1
+```
+
+Pour arrêter les processus du projet démarrés par ce script :
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\stop-local.ps1
+```
+
+Le virtual host installé dans Laragon est conservé dans `ops/laragon/ledinee.test.conf`. Apache doit charger `mod_proxy`, `mod_proxy_http` et `mod_rewrite`. Le script ne démarre ni n'arrête Apache ou MySQL, car ils sont partagés avec les autres projets Laragon.
+
 À la racine, dans PowerShell :
 
 ```powershell
@@ -52,17 +70,16 @@ Mot de passe des deux comptes dans l'environnement local préparé : `Dinee-Demo
 
 ## Frontend
 
-Dans un deuxième terminal :
+Pour installer les dépendances et produire la version servie par `ledinee.test` :
 
 ```powershell
 cd frontend
 npm install
-npm run dev
+npm run build
 ```
 
-Ouvrir [DINEE local](http://127.0.0.1:5173). Utiliser 127.0.0.1 de manière cohérente pour éviter des cookies répartis entre localhost et 127.0.0.1.
-Le proxy Vite transmet /api et /sanctum à Laravel sur le port 8000.
-`frontend/.env.example` documente VITE_API_URL ; laisser vide en développement via proxy.
+Après une modification frontend, relancer `npm run build`, puis actualiser [http://ledinee.test](http://ledinee.test). Pour travailler avec le rechargement à chaud, `npm run dev` reste disponible directement sur `http://127.0.0.1:5173`; le domaine `ledinee.test` continue alors de servir le dernier build généré.
+Le proxy Vite transmet aussi `/api` et `/sanctum` à Laravel sur le port 8000. `frontend/.env.example` documente `VITE_API_URL` ; le laisser vide en développement local.
 
 La connexion prépare le cookie CSRF, puis envoie les identifiants à /api/v1/auth/login.
 La session est conservée dans un cookie HttpOnly, pas dans localStorage. Les requêtes API transmettent un Referer réduit à l'origine du site pour la détection stateful Sanctum, jamais le chemin de la page ou un token d'invitation.
@@ -92,7 +109,9 @@ Test navigateur, avec les deux serveurs démarrés et les données de démonstra
 
 ```powershell
 npx playwright install chromium --only-shell
+$env:DINEE_BASE_URL = "http://ledinee.test"
 $env:DINEE_DEMO_PASSWORD = "Dinee-Demo-2026!"
+$env:DINEE_CHROMIUM_EXECUTABLE = "D:\laragon\www\dinee\.local\chromium-validated\chrome-headless-shell-win64\chrome-headless-shell.exe" # si présent
 npm run test:smoke
 ```
 
