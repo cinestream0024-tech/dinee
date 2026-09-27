@@ -41,6 +41,44 @@ class InvitationService
         });
     }
 
+    public function findPublic(string $plainTextToken): Invitation
+    {
+        $invitation = $this->findByPlainTextToken($plainTextToken)
+            ->load('selection.event');
+        $this->assertPubliclyAccessible($invitation, $invitation->selection->event, $invitation->selection);
+
+        return $invitation;
+    }
+
+    public function respond(string $plainTextToken, InvitationStatus $status, ?bool $futureInterest): Invitation
+    {
+        if (! in_array($status, [InvitationStatus::Accepted, InvitationStatus::Declined], true)) {
+            throw new \InvalidArgumentException('Unsupported invitation response.');
+        }
+
+        return DB::transaction(function () use ($plainTextToken, $status, $futureInterest) {
+            $snapshot = $this->findByPlainTextToken($plainTextToken);
+            [$event, $selection, $invitation] = $this->lockContext($snapshot);
+            if (! hash_equals($invitation->token_hash, InvitationToken::hash($plainTextToken))) {
+                abort(404);
+            }
+            $this->assertPubliclyAccessible($invitation, $event, $selection);
+
+            $normalizedInterest = $status === InvitationStatus::Declined ? $futureInterest : null;
+            if ($invitation->status === $status && $invitation->future_interest === $normalizedInterest) {
+                return $invitation->load('selection.event');
+            }
+
+            $invitation->forceFill([
+                'status' => $status,
+                'future_interest' => $normalizedInterest,
+                'responded_at' => now(),
+            ])->save();
+
+            return $invitation->load('selection.event');
+        });
+    }
+
     public function markSent(Invitation $invitation): Invitation
     {
         return DB::transaction(function () use ($invitation) {
@@ -50,7 +88,7 @@ class InvitationService
             if ($invitation->status === InvitationStatus::Cancelled) {
                 throw ValidationException::withMessages(['status' => ['cancelled_invitation']]);
             }
-            if ($invitation->token_revoked_at || $invitation->token_expires_at->isPast()) {
+            if ($invitation->token_revoked_at || $invitation->token_expires_at->lessThanOrEqualTo(now())) {
                 throw ValidationException::withMessages(['token' => ['valid_token_required']]);
             }
             if (! $invitation->sent_at) {
@@ -74,6 +112,29 @@ class InvitationService
 
             return $invitation->load('selection.profile', 'selection.event');
         });
+    }
+
+    private function findByPlainTextToken(string $plainTextToken): Invitation
+    {
+        if (! InvitationToken::hasValidFormat($plainTextToken)) {
+            abort(404);
+        }
+
+        return Invitation::where('token_hash', InvitationToken::hash($plainTextToken))->firstOrFail();
+    }
+
+    private function assertPubliclyAccessible(Invitation $invitation, Event $event, EventSelection $selection): void
+    {
+        if (
+            $invitation->status === InvitationStatus::Cancelled
+            || $invitation->token_revoked_at
+            || $invitation->token_expires_at->lessThanOrEqualTo(now())
+            || $event->status !== EventStatus::Upcoming
+            || ! $event->starts_at?->isFuture()
+            || $selection->withdrawn_at
+        ) {
+            abort(404);
+        }
     }
 
     private function assertInvitable(Event $event, EventSelection $selection): void

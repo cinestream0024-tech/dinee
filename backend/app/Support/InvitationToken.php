@@ -15,4 +15,9 @@ final class InvitationToken
     {
         return hash('sha256', $plainText);
     }
+
+    public static function hasValidFormat(string $plainText): bool
+    {
+        return preg_match('/^[A-Za-z0-9_-]{43}$/D', $plainText) === 1;
+    }
 }

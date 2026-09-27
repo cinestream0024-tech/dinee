@@ -5,12 +5,17 @@ use App\Http\Controllers\FoundationController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfileImportController;
+use App\Http\Controllers\PublicInvitationController;
 use App\Http\Controllers\SelectionController;
 use App\Http\Controllers\SessionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
     Route::get('/health', [FoundationController::class, 'health']);
+    Route::middleware('throttle:public-invitation')->group(function () {
+        Route::get('/public/invitations/{token}', [PublicInvitationController::class, 'show']);
+        Route::post('/public/invitations/{token}/response', [PublicInvitationController::class, 'respond']);
+    });
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/auth/user', [SessionController::class, 'show']);
