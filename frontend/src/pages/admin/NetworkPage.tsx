@@ -10,16 +10,21 @@ import {
 import Pagination from "@/components/admin/Pagination";
 import ProfileFormModal from "@/components/admin/ProfileFormModal";
 import ProfileHistoryModal from "@/components/admin/ProfileHistoryModal";
-import { controlClass } from "@/components/admin/formStyles";
 import PageBreadCrumb from "@/components/common/PageBreadCrumb";
 import PageMeta from "@/components/common/PageMeta";
+import NetworkFilters from "@/components/profiles/NetworkFilters";
+import ProfileAvatar from "@/components/profiles/ProfileAvatar";
 import Badge from "@/components/ui/badge/Badge";
 import { listProfiles, profileKeys } from "@/features/profiles/api";
 import {
-  DineeHistoryIcon,
+  DineeCloseIcon,
+  DineeCompanyIcon,
   DineeEditIcon,
+  DineeHistoryIcon,
+  DineeMailIcon,
+  DineePhoneIcon,
   DineePlusIcon,
-  DineeSearchIcon,
+  DineeResetIcon,
 } from "@/icons";
 import type { Availability, Profile } from "@/types/dinee";
 
@@ -38,7 +43,6 @@ export default function NetworkPage() {
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [historyProfile, setHistoryProfile] = useState<Profile | null>(null);
   const [notice, setNotice] = useState("");
-
   const filters = {
     q: params.get("q") ?? "",
     availability: (params.get("availability") ?? "") as Availability | "",
@@ -49,7 +53,6 @@ export default function NetworkPage() {
     queryKey: profileKeys.list(filters),
     queryFn: () => listProfiles(filters),
   });
-
   const updateParam = (key: string, value: string) => {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
@@ -57,7 +60,7 @@ export default function NetworkPage() {
     if (key !== "page") next.delete("page");
     setParams(next);
   };
-
+  const resetFilters = () => setParams({});
   const openCreate = () => {
     setEditingProfile(null);
     setFormOpen(true);
@@ -76,11 +79,10 @@ export default function NetworkPage() {
     );
     await client.invalidateQueries({ queryKey: profileKeys.all });
   };
-
-  const resetFilters = () => {
-    setParams({});
-  };
   const hasFilters = Boolean(filters.q || filters.availability);
+  const professionalSummary = (profile: Profile) =>
+    [profile.job_title, profile.company].filter(Boolean).join(" · ") ||
+    t("dinee.noProfessionalDetails");
 
   return (
     <>
@@ -89,7 +91,6 @@ export default function NetworkPage() {
         description={t("dinee.networkSubtitle")}
       />
       <PageBreadCrumb pageTitle={t("dinee.networkTitle")} />
-
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <p className="max-w-2xl text-sm text-gray-500 dark:text-gray-400">
           {t("dinee.networkSubtitle")}
@@ -99,7 +100,7 @@ export default function NetworkPage() {
           onClick={openCreate}
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
         >
-          <DineePlusIcon className="size-5" />
+          <DineePlusIcon aria-hidden="true" className="size-5" />
           {t("dinee.newProfile")}
         </button>
       </div>
@@ -107,74 +108,28 @@ export default function NetworkPage() {
       {notice && (
         <div
           role="status"
-          className="mb-4 rounded-lg border border-success-200 bg-success-50 px-4 py-3 text-sm text-success-700 dark:border-success-500/30 dark:bg-success-500/15 dark:text-success-300"
+          className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-success-200 bg-success-50 px-4 py-3 text-sm text-success-700 dark:border-success-500/30 dark:bg-success-500/15 dark:text-success-300"
         >
-          {notice}
+          <span>{notice}</span>
+          <button
+            type="button"
+            onClick={() => setNotice("")}
+            aria-label={t("dinee.close")}
+            className="flex size-8 shrink-0 items-center justify-center rounded-lg hover:bg-success-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-success-600 dark:hover:bg-success-500/15"
+          >
+            <DineeCloseIcon aria-hidden="true" className="size-4" />
+          </button>
         </div>
       )}
 
-      <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/3">
-        <div className="border-b border-gray-100 p-4 sm:p-5 dark:border-gray-800">
-          <form
-            className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(14rem,1fr)_16rem_auto]"
-            onSubmit={(event) => {
-              event.preventDefault();
-              const data = new FormData(event.currentTarget);
-              updateParam("q", String(data.get("q") ?? "").trim());
-            }}
-          >
-            <label className="relative block">
-              <span className="sr-only">{t("dinee.searchNetwork")}</span>
-              <DineeSearchIcon className="pointer-events-none absolute start-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
-              <input
-                key={filters.q}
-                name="q"
-                defaultValue={filters.q}
-                placeholder={t("dinee.searchNetwork")}
-                className={`${controlClass()} ps-10`}
-              />
-            </label>
-            <label>
-              <span className="sr-only">{t("dinee.availability")}</span>
-              <select
-                value={filters.availability}
-                onChange={(event) =>
-                  updateParam("availability", event.target.value)
-                }
-                className={controlClass()}
-              >
-                <option value="">{t("dinee.allAvailability")}</option>
-                <option value="available">
-                  {t("dinee.availability_available")}
-                </option>
-                <option value="temporarily_unavailable">
-                  {t("dinee.availability_temporarily_unavailable")}
-                </option>
-                <option value="unspecified">
-                  {t("dinee.availability_unspecified")}
-                </option>
-              </select>
-            </label>
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                className="flex-1 rounded-lg bg-gray-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-700 dark:bg-white/10 dark:hover:bg-white/15"
-              >
-                {t("dinee.search")}
-              </button>
-              {hasFilters && (
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  className="rounded-lg border border-gray-300 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
-                >
-                  {t("dinee.reset")}
-                </button>
-              )}
-            </div>
-          </form>
-        </div>
-
+      <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/3">
+        <NetworkFilters
+          q={filters.q}
+          availability={filters.availability}
+          hasFilters={hasFilters}
+          onChange={updateParam}
+          onReset={resetFilters}
+        />
         {query.isPending ? (
           <LoadingTable />
         ) : query.isError ? (
@@ -188,15 +143,25 @@ export default function NetworkPage() {
                 : "dinee.noProfilesDescription",
             )}
             action={
-              !hasFilters ? (
+              hasFilters ? (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+                >
+                  <DineeResetIcon aria-hidden="true" className="size-4" />
+                  {t("dinee.reset")}
+                </button>
+              ) : (
                 <button
                   type="button"
                   onClick={openCreate}
-                  className="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-brand-500 px-4 text-sm font-medium text-white hover:bg-brand-600"
                 >
+                  <DineePlusIcon aria-hidden="true" className="size-4" />
                   {t("dinee.newProfile")}
                 </button>
-              ) : undefined
+              )
             }
           />
         ) : (
@@ -204,54 +169,93 @@ export default function NetworkPage() {
             <div className="divide-y divide-gray-100 sm:hidden dark:divide-gray-800">
               {query.data.data.map((profile) => (
                 <article key={profile.id} className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h2 className="font-semibold text-gray-800 dark:text-white/90">
-                        {profile.first_name} {profile.last_name}
-                      </h2>
-                      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        {[profile.job_title, profile.company]
-                          .filter(Boolean)
-                          .join(" · ") || t("dinee.noProfessionalDetails")}
+                  <div className="flex items-start gap-3">
+                    <ProfileAvatar
+                      firstName={profile.first_name}
+                      lastName={profile.last_name}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="font-semibold text-gray-800 dark:text-white/90">
+                          {profile.first_name} {profile.last_name}
+                        </h2>
+                        <Badge
+                          color={profile.has_account ? "success" : "light"}
+                          size="sm"
+                        >
+                          {t(
+                            profile.has_account
+                              ? "dinee.accountActive"
+                              : "dinee.noAccount",
+                          )}
+                        </Badge>
+                      </div>
+                      <p className="mt-1 text-sm leading-5 text-gray-500 dark:text-gray-400">
+                        {professionalSummary(profile)}
                       </p>
+                      {profile.sector && (
+                        <p className="mt-1 text-theme-xs text-gray-400 dark:text-gray-500">
+                          {profile.sector}
+                        </p>
+                      )}
                     </div>
-                    <Badge color={availabilityColor[profile.availability]}>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between gap-3 rounded-lg bg-gray-50 px-3 py-2 dark:bg-white/3">
+                    <span className="text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                      {t("dinee.availability")}
+                    </span>
+                    <Badge
+                      color={availabilityColor[profile.availability]}
+                      size="sm"
+                    >
                       {t(`dinee.availability_${profile.availability}`)}
                     </Badge>
                   </div>
-                  <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <dt className="text-gray-500 dark:text-gray-400">
-                        {t("dinee.email")}
-                      </dt>
-                      <dd className="mt-1 break-all text-gray-800 dark:text-white/90">
-                        {profile.email || "—"}
-                      </dd>
+                  {(profile.email || profile.phone) && (
+                    <div className="mt-4 space-y-2">
+                      {profile.email && (
+                        <a
+                          href={`mailto:${profile.email}`}
+                          className="flex min-h-10 items-center gap-2 rounded-lg px-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-brand-400"
+                        >
+                          <DineeMailIcon
+                            aria-hidden="true"
+                            className="size-4 text-gray-400"
+                          />
+                          <span className="min-w-0 truncate">
+                            {profile.email}
+                          </span>
+                        </a>
+                      )}
+                      {profile.phone && (
+                        <a
+                          href={`tel:${profile.phone}`}
+                          className="flex min-h-10 items-center gap-2 rounded-lg px-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-brand-400"
+                        >
+                          <DineePhoneIcon
+                            aria-hidden="true"
+                            className="size-4 text-gray-400"
+                          />
+                          {profile.phone}
+                        </a>
+                      )}
                     </div>
-                    <div>
-                      <dt className="text-gray-500 dark:text-gray-400">
-                        {t("dinee.phone")}
-                      </dt>
-                      <dd className="mt-1 text-gray-800 dark:text-white/90">
-                        {profile.phone || "—"}
-                      </dd>
-                    </div>
-                  </dl>
+                  )}
                   <div className="mt-4 grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => setHistoryProfile(profile)}
-                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 dark:border-gray-700 dark:text-gray-300"
+                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:border-brand-500/50 dark:hover:bg-brand-500/10"
                     >
-                      <DineeHistoryIcon className="size-4" />
+                      <DineeHistoryIcon aria-hidden="true" className="size-4" />
                       {t("dinee.history")}
                     </button>
                     <button
                       type="button"
                       onClick={() => openEdit(profile)}
-                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 dark:border-gray-700 dark:text-gray-300"
+                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:border-brand-500/50 dark:hover:bg-brand-500/10"
                     >
-                      <DineeEditIcon className="size-4" />
+                      <DineeEditIcon aria-hidden="true" className="size-4" />
                       {t("dinee.edit")}
                     </button>
                   </div>
@@ -261,14 +265,13 @@ export default function NetworkPage() {
 
             <div className="hidden overflow-x-auto sm:block">
               <table className="min-w-full">
-                <thead className="border-b border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/50">
+                <thead className="border-b border-gray-100 bg-gray-50/80 dark:border-gray-800 dark:bg-gray-900/50">
                   <tr>
                     {[
                       "person",
                       "professionalInformation",
                       "contact",
                       "availability",
-                      "account",
                       "actions",
                     ].map((key) => (
                       <th
@@ -288,28 +291,81 @@ export default function NetworkPage() {
                       className="hover:bg-gray-50/70 dark:hover:bg-white/2"
                     >
                       <td className="px-5 py-4">
-                        <p className="font-medium text-gray-800 dark:text-white/90">
-                          {profile.first_name} {profile.last_name}
-                        </p>
-                        <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
-                          {profile.sector || "—"}
-                        </p>
+                        <div className="flex items-center gap-3">
+                          <ProfileAvatar
+                            firstName={profile.first_name}
+                            lastName={profile.last_name}
+                            size="sm"
+                          />
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-800 dark:text-white/90">
+                              {profile.first_name} {profile.last_name}
+                            </p>
+                            <div className="mt-1 flex flex-wrap items-center gap-2">
+                              <Badge
+                                color={
+                                  profile.has_account ? "success" : "light"
+                                }
+                                size="sm"
+                              >
+                                {t(
+                                  profile.has_account
+                                    ? "dinee.accountActive"
+                                    : "dinee.noAccount",
+                                )}
+                              </Badge>
+                              {profile.sector && (
+                                <span className="text-theme-xs text-gray-500 dark:text-gray-400">
+                                  {profile.sector}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-5 py-4">
                         <p className="text-sm text-gray-700 dark:text-gray-300">
                           {profile.job_title || "—"}
                         </p>
-                        <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+                        <p className="mt-1 inline-flex items-center gap-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                          <DineeCompanyIcon
+                            aria-hidden="true"
+                            className="size-3.5"
+                          />
                           {profile.company || "—"}
                         </p>
                       </td>
                       <td className="px-5 py-4">
-                        <p className="text-sm text-gray-700 dark:text-gray-300">
-                          {profile.email || "—"}
-                        </p>
-                        <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
-                          {profile.phone || "—"}
-                        </p>
+                        <div className="space-y-1.5">
+                          {profile.email ? (
+                            <a
+                              href={`mailto:${profile.email}`}
+                              className="flex items-center gap-2 text-sm text-gray-600 hover:text-brand-600 dark:text-gray-300 dark:hover:text-brand-400"
+                            >
+                              <DineeMailIcon
+                                aria-hidden="true"
+                                className="size-4 text-gray-400"
+                              />
+                              <span className="max-w-52 truncate">
+                                {profile.email}
+                              </span>
+                            </a>
+                          ) : (
+                            <span className="text-sm text-gray-400">—</span>
+                          )}
+                          {profile.phone && (
+                            <a
+                              href={`tel:${profile.phone}`}
+                              className="flex items-center gap-2 text-theme-xs text-gray-500 hover:text-brand-600 dark:text-gray-400 dark:hover:text-brand-400"
+                            >
+                              <DineePhoneIcon
+                                aria-hidden="true"
+                                className="size-4 text-gray-400"
+                              />
+                              {profile.phone}
+                            </a>
+                          )}
+                        </div>
                       </td>
                       <td className="px-5 py-4">
                         <Badge color={availabilityColor[profile.availability]}>
@@ -317,27 +373,20 @@ export default function NetworkPage() {
                         </Badge>
                       </td>
                       <td className="px-5 py-4">
-                        <Badge
-                          color={profile.has_account ? "success" : "light"}
-                        >
-                          {t(
-                            profile.has_account
-                              ? "dinee.accountActive"
-                              : "dinee.noAccount",
-                          )}
-                        </Badge>
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
                           <button
                             type="button"
                             onClick={() => setHistoryProfile(profile)}
                             aria-label={t("dinee.viewHistoryNamed", {
                               name: `${profile.first_name} ${profile.last_name}`,
                             })}
-                            className="flex size-10 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-brand-600 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-brand-400"
+                            title={t("dinee.history")}
+                            className="flex size-10 items-center justify-center rounded-lg text-gray-500 hover:bg-brand-50 hover:text-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:text-gray-400 dark:hover:bg-brand-500/10 dark:hover:text-brand-400"
                           >
-                            <DineeHistoryIcon className="size-5" />
+                            <DineeHistoryIcon
+                              aria-hidden="true"
+                              className="size-5"
+                            />
                           </button>
                           <button
                             type="button"
@@ -345,9 +394,13 @@ export default function NetworkPage() {
                             aria-label={t("dinee.editNamedProfile", {
                               name: `${profile.first_name} ${profile.last_name}`,
                             })}
-                            className="flex size-10 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-brand-600 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-brand-400"
+                            title={t("dinee.edit")}
+                            className="flex size-10 items-center justify-center rounded-lg text-gray-500 hover:bg-brand-50 hover:text-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:text-gray-400 dark:hover:bg-brand-500/10 dark:hover:text-brand-400"
                           >
-                            <DineeEditIcon className="size-5" />
+                            <DineeEditIcon
+                              aria-hidden="true"
+                              className="size-5"
+                            />
                           </button>
                         </div>
                       </td>
@@ -363,7 +416,6 @@ export default function NetworkPage() {
           </>
         )}
       </section>
-
       {formOpen && (
         <ProfileFormModal
           isOpen
