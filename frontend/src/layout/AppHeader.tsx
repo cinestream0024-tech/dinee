@@ -1,7 +1,7 @@
 import { ThemeToggleButton } from "@/components/common/ThemeToggleButton";
 import UserDropdown from "@/components/header/UserDropdown";
 import { useSidebar } from "@/context/SidebarContext";
-import { HorizontaLDots, MenuIcon } from "@/icons";
+import { DineeMoreIcon, DineeMenuIcon } from "@/icons";
 import { cn } from "@/utils";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -31,7 +31,7 @@ export default function AppHeader() {
             aria-label={t("dinee.menu")}
             aria-expanded={isMobileOpen}
           >
-            <MenuIcon className="size-6" />
+            <DineeMenuIcon className="size-6" />
           </button>
 
           <Link
@@ -63,7 +63,7 @@ export default function AppHeader() {
             aria-label={t("dinee.accountActions")}
             aria-expanded={isApplicationMenuOpen}
           >
-            <HorizontaLDots className="size-6" />
+            <DineeMoreIcon className="size-6" />
           </button>
         </div>
 

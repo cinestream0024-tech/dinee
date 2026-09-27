@@ -1,4 +1,4 @@
-import { AlertHexaIcon, SearchIcon } from "@/icons";
+import { DineeAlertIcon, DineeEmptyIcon } from "@/icons";
 import { useTranslation } from "react-i18next";
 
 export function LoadingTable({ rows = 5 }: { rows?: number }) {
@@ -23,7 +23,7 @@ export function ErrorState({ onRetry }: { onRetry: () => void }) {
       className="flex flex-col items-center px-6 py-12 text-center"
     >
       <span className="flex size-12 items-center justify-center rounded-full bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-400">
-        <AlertHexaIcon className="size-6" />
+        <DineeAlertIcon className="size-6" />
       </span>
       <h2 className="mt-4 text-base font-semibold text-gray-800 dark:text-white/90">
         {t("dinee.loadFailed")}
@@ -54,7 +54,7 @@ export function EmptyState({
   return (
     <div className="flex flex-col items-center px-6 py-12 text-center">
       <span className="flex size-12 items-center justify-center rounded-full bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-        <SearchIcon className="size-6" />
+        <DineeEmptyIcon className="size-6" />
       </span>
       <h2 className="mt-4 text-base font-semibold text-gray-800 dark:text-white/90">
         {title}

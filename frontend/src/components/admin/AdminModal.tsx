@@ -1,5 +1,5 @@
 import { Modal } from "@/components/ui/modal";
-import { CloseIcon } from "@/icons";
+import { DineeCloseIcon } from "@/icons";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -52,7 +52,7 @@ export default function AdminModal({
             aria-label={t("dinee.close")}
             className="flex size-10 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 disabled:opacity-40 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
           >
-            <CloseIcon className="size-5" />
+            <DineeCloseIcon className="size-5" />
           </button>
         </header>
         <div className="max-h-[calc(100vh-8rem)] overflow-y-auto">

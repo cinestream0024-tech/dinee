@@ -1,14 +1,19 @@
 import { useSidebar } from "@/context/SidebarContext";
-import { CalenderIcon, GridIcon, GroupIcon, HorizontaLDots } from "@/icons";
+import {
+  DineeCalendarIcon,
+  DineeDashboardIcon,
+  DineeUsersIcon,
+  DineeMoreIcon,
+} from "@/icons";
 import { cn } from "@/utils";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, useLocation } from "react-router";
 
 const items = [
-  { to: "/admin", key: "adminHome", Icon: GridIcon, end: true },
-  { to: "/admin/events", key: "events", Icon: CalenderIcon, end: false },
-  { to: "/admin/network", key: "network", Icon: GroupIcon, end: false },
+  { to: "/admin", key: "adminHome", Icon: DineeDashboardIcon, end: true },
+  { to: "/admin/events", key: "events", Icon: DineeCalendarIcon, end: false },
+  { to: "/admin/network", key: "network", Icon: DineeUsersIcon, end: false },
 ] as const;
 
 export default function AppSidebar() {
@@ -70,7 +75,7 @@ export default function AppSidebar() {
             {showsLabels ? (
               t("dinee.adminMenu")
             ) : (
-              <HorizontaLDots className="size-6" />
+              <DineeMoreIcon className="size-6" />
             )}
           </h2>
 

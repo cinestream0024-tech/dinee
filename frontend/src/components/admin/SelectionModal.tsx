@@ -19,7 +19,7 @@ import {
   selectionKeys,
   withdrawSelection,
 } from "@/features/selections/api";
-import { PlusIcon, SearchIcon, TrashBinIcon } from "@/icons";
+import { DineeAddUserIcon, DineeSearchIcon, DineeTrashIcon } from "@/icons";
 import type { DineeEvent, Profile } from "@/types/dinee";
 
 function isSelectable(event: DineeEvent | null) {
@@ -168,7 +168,7 @@ export default function SelectionModal({
                     })}
                     className="flex size-10 shrink-0 items-center justify-center rounded-lg text-error-600 hover:bg-error-50 disabled:cursor-not-allowed disabled:opacity-40 dark:text-error-400 dark:hover:bg-error-500/10"
                   >
-                    <TrashBinIcon className="size-5" />
+                    <DineeTrashIcon className="size-5" />
                   </button>
                 </li>
               ))}
@@ -191,7 +191,7 @@ export default function SelectionModal({
               {t("dinee.findPerson")}
             </label>
             <div className="relative flex-1">
-              <SearchIcon className="pointer-events-none absolute start-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
+              <DineeSearchIcon className="pointer-events-none absolute start-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
               <input
                 id="selection-search"
                 value={draftSearch}
@@ -240,7 +240,7 @@ export default function SelectionModal({
                     onClick={() => addMutation.mutate(profile)}
                     className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-sm font-medium text-brand-700 hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300"
                   >
-                    <PlusIcon className="size-4" />
+                    <DineeAddUserIcon className="size-4" />
                     {t("dinee.add")}
                   </button>
                 </li>

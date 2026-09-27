@@ -1,4 +1,4 @@
-import { ChevronLeftIcon, ArrowRightIcon } from "@/icons";
+import { DineeChevronLeftIcon, DineeChevronRightIcon } from "@/icons";
 import type { PaginationMeta } from "@/types/dinee";
 import { useTranslation } from "react-i18next";
 
@@ -31,7 +31,7 @@ export default function Pagination({
           onClick={() => onPageChange(meta.current_page - 1)}
           className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/5"
         >
-          <ChevronLeftIcon className="size-4 rtl:rotate-180" />
+          <DineeChevronLeftIcon className="size-4 rtl:rotate-180" />
           {t("dinee.previous")}
         </button>
         <button
@@ -41,7 +41,7 @@ export default function Pagination({
           className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/5"
         >
           {t("dinee.next")}
-          <ArrowRightIcon className="size-4 rtl:rotate-180" />
+          <DineeChevronRightIcon className="size-4 rtl:rotate-180" />
         </button>
       </div>
     </nav>

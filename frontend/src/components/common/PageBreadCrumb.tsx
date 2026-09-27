@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { ChevronLeftIcon } from "@/icons";
+import { DineeChevronLeftIcon } from "@/icons";
 export default function PageBreadcrumb({ pageTitle }: { pageTitle: string }) {
   const { t } = useTranslation();
   return (
@@ -16,7 +16,7 @@ export default function PageBreadcrumb({ pageTitle }: { pageTitle: string }) {
               className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400"
             >
               {t("dinee.adminHome")}
-              <ChevronLeftIcon className="size-4 rotate-180 rtl:rotate-0" />
+              <DineeChevronLeftIcon className="size-4 rotate-180 rtl:rotate-0" />
             </Link>
           </li>
           <li

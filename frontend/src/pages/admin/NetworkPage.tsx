@@ -15,7 +15,12 @@ import PageBreadCrumb from "@/components/common/PageBreadCrumb";
 import PageMeta from "@/components/common/PageMeta";
 import Badge from "@/components/ui/badge/Badge";
 import { listProfiles, profileKeys } from "@/features/profiles/api";
-import { ClockIcon, PencilIcon, PlusIcon, SearchIcon } from "@/icons";
+import {
+  DineeHistoryIcon,
+  DineeEditIcon,
+  DineePlusIcon,
+  DineeSearchIcon,
+} from "@/icons";
 import type { Availability, Profile } from "@/types/dinee";
 
 const availabilityColor: Record<Availability, "light" | "success" | "warning"> =
@@ -94,7 +99,7 @@ export default function NetworkPage() {
           onClick={openCreate}
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
         >
-          <PlusIcon className="size-5" />
+          <DineePlusIcon className="size-5" />
           {t("dinee.newProfile")}
         </button>
       </div>
@@ -120,7 +125,7 @@ export default function NetworkPage() {
           >
             <label className="relative block">
               <span className="sr-only">{t("dinee.searchNetwork")}</span>
-              <SearchIcon className="pointer-events-none absolute start-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
+              <DineeSearchIcon className="pointer-events-none absolute start-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
               <input
                 key={filters.q}
                 name="q"
@@ -238,7 +243,7 @@ export default function NetworkPage() {
                       onClick={() => setHistoryProfile(profile)}
                       className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 dark:border-gray-700 dark:text-gray-300"
                     >
-                      <ClockIcon className="size-4" />
+                      <DineeHistoryIcon className="size-4" />
                       {t("dinee.history")}
                     </button>
                     <button
@@ -246,7 +251,7 @@ export default function NetworkPage() {
                       onClick={() => openEdit(profile)}
                       className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 dark:border-gray-700 dark:text-gray-300"
                     >
-                      <PencilIcon className="size-4" />
+                      <DineeEditIcon className="size-4" />
                       {t("dinee.edit")}
                     </button>
                   </div>
@@ -332,7 +337,7 @@ export default function NetworkPage() {
                             })}
                             className="flex size-10 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-brand-600 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-brand-400"
                           >
-                            <ClockIcon className="size-5" />
+                            <DineeHistoryIcon className="size-5" />
                           </button>
                           <button
                             type="button"
@@ -342,7 +347,7 @@ export default function NetworkPage() {
                             })}
                             className="flex size-10 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-brand-600 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-brand-400"
                           >
-                            <PencilIcon className="size-5" />
+                            <DineeEditIcon className="size-5" />
                           </button>
                         </div>
                       </td>

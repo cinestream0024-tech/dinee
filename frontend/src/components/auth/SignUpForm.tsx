@@ -1,7 +1,7 @@
 import Label from "@/components/form/Label";
 import Checkbox from "@/components/form/input/Checkbox";
 import Input from "@/components/form/input/InputField";
-import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "@/icons";
+import { DineeChevronLeftIcon, DineeEyeOffIcon, DineeEyeIcon } from "@/icons";
 import { useState } from "react";
 import { Link } from "react-router";
 
@@ -15,7 +15,7 @@ export default function SignUpForm() {
           to="/"
           className="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
         >
-          <ChevronLeftIcon className="size-5 rtl:rotate-180" />
+          <DineeChevronLeftIcon className="size-5 rtl:rotate-180" />
           Back to dashboard
         </Link>
       </div>
@@ -137,9 +137,9 @@ export default function SignUpForm() {
                       className="absolute inset-e-4 top-1/2 z-30 -translate-y-1/2 cursor-pointer"
                     >
                       {showPassword ? (
-                        <EyeIcon className="size-5 fill-gray-500 dark:fill-gray-400" />
+                        <DineeEyeIcon className="size-5 fill-gray-500 dark:fill-gray-400" />
                       ) : (
-                        <EyeCloseIcon className="size-5 fill-gray-500 dark:fill-gray-400" />
+                        <DineeEyeOffIcon className="size-5 fill-gray-500 dark:fill-gray-400" />
                       )}
                     </span>
                   </div>

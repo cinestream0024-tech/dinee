@@ -2,7 +2,7 @@ import Label from "@/components/form/Label";
 import Input from "@/components/form/input/InputField";
 import Button from "@/components/ui/button/Button";
 import { useLogin } from "@/features/auth/auth";
-import { EyeCloseIcon, EyeIcon } from "@/icons";
+import { DineeEyeOffIcon, DineeEyeIcon } from "@/icons";
 import { ApiError } from "@/services/api";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -106,9 +106,9 @@ export default function SignInForm() {
                   )}
                 >
                   {showPassword ? (
-                    <EyeIcon className="size-5 fill-current" />
+                    <DineeEyeIcon className="size-5 fill-current" />
                   ) : (
-                    <EyeCloseIcon className="size-5 fill-current" />
+                    <DineeEyeOffIcon className="size-5 fill-current" />
                   )}
                 </button>
               </div>

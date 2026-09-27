@@ -4,20 +4,20 @@ import PageMeta from "@/components/common/PageMeta";
 import Badge from "@/components/ui/badge/Badge";
 import { api } from "@/services/api";
 import {
-  CalenderIcon,
-  CheckCircleIcon,
-  GroupIcon,
-  PaperPlaneIcon,
+  DineeCalendarIcon,
+  DineeCheckIcon,
+  DineeUsersIcon,
+  DineeSendIcon,
 } from "@/icons";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
 const metricItems = [
-  { key: "selectedProfiles", value: "—", Icon: GroupIcon },
-  { key: "invitationsToSend", value: "—", Icon: PaperPlaneIcon },
-  { key: "confirmations", value: "—", Icon: CheckCircleIcon },
-  { key: "nextEdition", value: "—", Icon: CalenderIcon },
+  { key: "selectedProfiles", value: "—", Icon: DineeUsersIcon },
+  { key: "invitationsToSend", value: "—", Icon: DineeSendIcon },
+  { key: "confirmations", value: "—", Icon: DineeCheckIcon },
+  { key: "nextEdition", value: "—", Icon: DineeCalendarIcon },
 ] as const;
 
 export default function FoundationPage({
@@ -116,7 +116,7 @@ export default function FoundationPage({
                 {t("dinee.nextEditionDescription")}
               </p>
               <div className="mt-8 flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 px-6 text-center dark:border-gray-700">
-                <CalenderIcon className="size-8 text-brand-500" />
+                <DineeCalendarIcon className="size-8 text-brand-500" />
                 <p className="mt-3 text-sm font-medium text-gray-800 dark:text-white/90">
                   {t("dinee.noEditionSelected")}
                 </p>
