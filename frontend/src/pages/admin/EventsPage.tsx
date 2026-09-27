@@ -1,0 +1,390 @@
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router";
+import {
+  EmptyState,
+  ErrorState,
+  LoadingTable,
+} from "@/components/admin/AsyncState";
+import EventFormModal from "@/components/admin/EventFormModal";
+import Pagination from "@/components/admin/Pagination";
+import SelectionModal from "@/components/admin/SelectionModal";
+import { controlClass } from "@/components/admin/formStyles";
+import PageBreadCrumb from "@/components/common/PageBreadCrumb";
+import PageMeta from "@/components/common/PageMeta";
+import Badge from "@/components/ui/badge/Badge";
+import { eventKeys, listEvents } from "@/features/events/api";
+import { GroupIcon, PencilIcon, PlusIcon, SearchIcon } from "@/icons";
+import { useLanguage } from "@/context/LanguageContext";
+import type { DineeEvent, EventPeriod, EventStatus } from "@/types/dinee";
+
+const statusColor: Record<EventStatus, "light" | "info" | "success" | "error"> =
+  {
+    draft: "light",
+    upcoming: "info",
+    completed: "success",
+    cancelled: "error",
+  };
+
+export default function EventsPage() {
+  const { t } = useTranslation();
+  const { language } = useLanguage();
+  const client = useQueryClient();
+  const [params, setParams] = useSearchParams();
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<DineeEvent | null>(null);
+  const [selectionEvent, setSelectionEvent] = useState<DineeEvent | null>(null);
+  const [notice, setNotice] = useState("");
+
+  const filters = {
+    q: params.get("q") ?? "",
+    status: (params.get("status") ?? "") as EventStatus | "",
+    period: (params.get("period") ?? "") as EventPeriod | "",
+    page: Math.max(1, Number(params.get("page") ?? 1)),
+    perPage: 20,
+  };
+  const query = useQuery({
+    queryKey: eventKeys.list(filters),
+    queryFn: () => listEvents(filters),
+  });
+
+  const updateParam = (key: string, value: string) => {
+    const next = new URLSearchParams(params);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    if (key !== "page") next.delete("page");
+    setParams(next);
+  };
+
+  const resetFilters = () => {
+    setParams({});
+  };
+
+  const openCreate = () => {
+    setEditingEvent(null);
+    setFormOpen(true);
+  };
+  const openEdit = (event: DineeEvent) => {
+    setEditingEvent(event);
+    setFormOpen(true);
+  };
+  const saved = async (event: DineeEvent) => {
+    setFormOpen(false);
+    setEditingEvent(null);
+    setNotice(t("dinee.eventSaved", { title: event.title }));
+    await client.invalidateQueries({ queryKey: eventKeys.all });
+  };
+  const selectionUpdated = (message: string) => {
+    setNotice(message);
+  };
+
+  const formatDate = (value: string | null) =>
+    value
+      ? new Intl.DateTimeFormat(language, {
+          dateStyle: "medium",
+          timeStyle: "short",
+        }).format(new Date(value))
+      : t("dinee.unscheduled");
+
+  const hasFilters = Boolean(filters.q || filters.status || filters.period);
+
+  return (
+    <>
+      <PageMeta
+        title={`${t("dinee.eventsTitle")} | ${t("dinee.brand")}`}
+        description={t("dinee.eventsSubtitle")}
+      />
+      <PageBreadCrumb pageTitle={t("dinee.eventsTitle")} />
+
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="max-w-2xl text-sm text-gray-500 dark:text-gray-400">
+            {t("dinee.eventsSubtitle")}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={openCreate}
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
+        >
+          <PlusIcon className="size-5" />
+          {t("dinee.newEvent")}
+        </button>
+      </div>
+
+      {notice && (
+        <div
+          role="status"
+          className="mb-4 rounded-lg border border-success-200 bg-success-50 px-4 py-3 text-sm text-success-700 dark:border-success-500/30 dark:bg-success-500/15 dark:text-success-300"
+        >
+          {notice}
+        </div>
+      )}
+
+      <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/3">
+        <div className="border-b border-gray-100 p-4 sm:p-5 dark:border-gray-800">
+          <form
+            className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(14rem,1fr)_12rem_12rem_auto]"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const data = new FormData(event.currentTarget);
+              updateParam("q", String(data.get("q") ?? "").trim());
+            }}
+          >
+            <label className="relative block">
+              <span className="sr-only">{t("dinee.searchEvents")}</span>
+              <SearchIcon className="pointer-events-none absolute start-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
+              <input
+                key={filters.q}
+                name="q"
+                defaultValue={filters.q}
+                placeholder={t("dinee.searchEvents")}
+                className={`${controlClass()} ps-10`}
+              />
+            </label>
+            <label>
+              <span className="sr-only">{t("dinee.status")}</span>
+              <select
+                value={filters.status}
+                onChange={(event) => updateParam("status", event.target.value)}
+                className={controlClass()}
+              >
+                <option value="">{t("dinee.allStatuses")}</option>
+                {(["draft", "upcoming", "completed", "cancelled"] as const).map(
+                  (status) => (
+                    <option key={status} value={status}>
+                      {t(`dinee.status_${status}`)}
+                    </option>
+                  ),
+                )}
+              </select>
+            </label>
+            <label>
+              <span className="sr-only">{t("dinee.period")}</span>
+              <select
+                value={filters.period}
+                onChange={(event) => updateParam("period", event.target.value)}
+                className={controlClass()}
+              >
+                <option value="">{t("dinee.allPeriods")}</option>
+                <option value="future">{t("dinee.future")}</option>
+                <option value="past">{t("dinee.past")}</option>
+                <option value="unscheduled">{t("dinee.unscheduled")}</option>
+              </select>
+            </label>
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                className="flex-1 rounded-lg bg-gray-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-700 dark:bg-white/10 dark:hover:bg-white/15"
+              >
+                {t("dinee.search")}
+              </button>
+              {hasFilters && (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="rounded-lg border border-gray-300 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+                >
+                  {t("dinee.reset")}
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+
+        {query.isPending ? (
+          <LoadingTable />
+        ) : query.isError ? (
+          <ErrorState onRetry={() => query.refetch()} />
+        ) : query.data.data.length === 0 ? (
+          <EmptyState
+            title={t("dinee.noEvents")}
+            description={t(
+              hasFilters
+                ? "dinee.noFilteredEventsDescription"
+                : "dinee.noEventsDescription",
+            )}
+            action={
+              !hasFilters ? (
+                <button
+                  type="button"
+                  onClick={openCreate}
+                  className="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600"
+                >
+                  {t("dinee.newEvent")}
+                </button>
+              ) : undefined
+            }
+          />
+        ) : (
+          <>
+            <div className="divide-y divide-gray-100 sm:hidden dark:divide-gray-800">
+              {query.data.data.map((event) => (
+                <article key={event.id} className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h2 className="font-semibold text-gray-800 dark:text-white/90">
+                        {event.title}
+                      </h2>
+                      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        {formatDate(event.starts_at)}
+                      </p>
+                    </div>
+                    <Badge color={statusColor[event.status]}>
+                      {t(`dinee.status_${event.status}`)}
+                    </Badge>
+                  </div>
+                  <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <dt className="text-gray-500 dark:text-gray-400">
+                        {t("dinee.location")}
+                      </dt>
+                      <dd className="mt-1 text-gray-800 dark:text-white/90">
+                        {event.location || "—"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-gray-500 dark:text-gray-400">
+                        {t("dinee.selectedCount")}
+                      </dt>
+                      <dd className="mt-1 text-gray-800 dark:text-white/90">
+                        {event.selected_count}
+                      </dd>
+                    </div>
+                  </dl>
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectionEvent(event)}
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 dark:border-gray-700 dark:text-gray-300"
+                    >
+                      <GroupIcon className="size-4" />
+                      {t("dinee.selection")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openEdit(event)}
+                      disabled={
+                        event.status === "completed" ||
+                        event.status === "cancelled"
+                      }
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-300"
+                    >
+                      <PencilIcon className="size-4" />
+                      {t("dinee.edit")}
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="min-w-full">
+                <thead className="border-b border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/50">
+                  <tr>
+                    {[
+                      "edition",
+                      "dateTime",
+                      "status",
+                      "selectedCount",
+                      "capacity",
+                      "actions",
+                    ].map((key) => (
+                      <th
+                        key={key}
+                        scope="col"
+                        className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase dark:text-gray-400"
+                      >
+                        {t(`dinee.${key}`)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {query.data.data.map((event) => (
+                    <tr
+                      key={event.id}
+                      className="hover:bg-gray-50/70 dark:hover:bg-white/2"
+                    >
+                      <td className="px-5 py-4">
+                        <p className="font-medium text-gray-800 dark:text-white/90">
+                          {event.title}
+                        </p>
+                        <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+                          {event.location || "—"}
+                        </p>
+                      </td>
+                      <td className="px-5 py-4 text-sm whitespace-nowrap text-gray-600 dark:text-gray-300">
+                        {formatDate(event.starts_at)}
+                      </td>
+                      <td className="px-5 py-4">
+                        <Badge color={statusColor[event.status]}>
+                          {t(`dinee.status_${event.status}`)}
+                        </Badge>
+                      </td>
+                      <td className="px-5 py-4 text-sm text-gray-700 dark:text-gray-300">
+                        {event.selected_count}
+                      </td>
+                      <td className="px-5 py-4 text-sm text-gray-700 dark:text-gray-300">
+                        {event.capacity ?? "—"}
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setSelectionEvent(event)}
+                            aria-label={t("dinee.manageSelectionNamed", {
+                              title: event.title,
+                            })}
+                            className="flex size-10 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-brand-600 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-brand-400"
+                          >
+                            <GroupIcon className="size-5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openEdit(event)}
+                            disabled={
+                              event.status === "completed" ||
+                              event.status === "cancelled"
+                            }
+                            aria-label={t("dinee.editNamedEvent", {
+                              title: event.title,
+                            })}
+                            className="flex size-10 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-brand-400"
+                          >
+                            <PencilIcon className="size-5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Pagination
+              meta={query.data.meta}
+              onPageChange={(page) => updateParam("page", String(page))}
+            />
+          </>
+        )}
+      </section>
+
+      {formOpen && (
+        <EventFormModal
+          isOpen
+          event={editingEvent}
+          onClose={() => setFormOpen(false)}
+          onSaved={saved}
+        />
+      )}
+      {selectionEvent && (
+        <SelectionModal
+          event={selectionEvent}
+          onClose={() => setSelectionEvent(null)}
+          onUpdated={selectionUpdated}
+        />
+      )}
+    </>
+  );
+}

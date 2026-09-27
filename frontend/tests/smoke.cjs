@@ -32,9 +32,18 @@ fs.mkdirSync(output, { recursive: true });
       await page.goto(base + "/login");
       await page.getByLabel("Adresse e-mail").fill(email);
       await page.getByLabel("Mot de passe", { exact: true }).fill(password);
+      const loginResponsePromise = page.waitForResponse((response) =>
+        response.url().endsWith("/api/v1/auth/login"),
+      );
       await page
         .getByRole("button", { name: "Se connecter", exact: true })
         .click();
+      const loginResponse = await loginResponsePromise;
+      assert.equal(
+        loginResponse.status(),
+        200,
+        `Login API returned ${loginResponse.status()}`,
+      );
     }
     async function noOverflow() {
       assert.equal(
@@ -65,7 +74,29 @@ fs.mkdirSync(output, { recursive: true });
       path: path.join(output, "admin-desktop.png"),
       fullPage: true,
     });
-    console.log("PASS admin login, API/DB, reload session, desktop");
+    await page.goto(base + "/admin/events");
+    await page
+      .getByRole("heading", { name: "Éditions", exact: true })
+      .waitFor();
+    await page
+      .getByRole("button", { name: "Nouvelle édition", exact: true })
+      .waitFor();
+    await page.screenshot({
+      path: path.join(output, "events-desktop.png"),
+      fullPage: true,
+    });
+    await page.goto(base + "/admin/network");
+    await page.getByRole("heading", { name: "Réseau", exact: true }).waitFor();
+    await page
+      .getByRole("button", { name: "Nouveau profil", exact: true })
+      .waitFor();
+    await page.screenshot({
+      path: path.join(output, "network-desktop.png"),
+      fullPage: true,
+    });
+    console.log(
+      "PASS admin login, API/DB, event and network screens, reload session, desktop",
+    );
     const cookies = await context.cookies();
     assert(
       cookies.some(
