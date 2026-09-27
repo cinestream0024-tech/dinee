@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\FoundationController;
+use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfileImportController;
 use App\Http\Controllers\SelectionController;
@@ -20,6 +21,11 @@ Route::prefix('v1')->group(function () {
             Route::get('/events/{event}/selections', [SelectionController::class, 'index']);
             Route::post('/events/{event}/selections', [SelectionController::class, 'store']);
             Route::delete('/events/{event}/selections/{profile}', [SelectionController::class, 'destroy']);
+            Route::get('/events/{event}/invitations', [InvitationController::class, 'index']);
+            Route::post('/events/{event}/invitations', [InvitationController::class, 'store']);
+            Route::get('/invitations/{invitation}', [InvitationController::class, 'show']);
+            Route::post('/invitations/{invitation}/mark-sent', [InvitationController::class, 'markSent']);
+            Route::post('/invitations/{invitation}/cancel', [InvitationController::class, 'cancel']);
             Route::post('/profiles/import/preview', [ProfileImportController::class, 'preview']);
             Route::post('/profiles/import', [ProfileImportController::class, 'store']);
             Route::get('/profiles/{profile}/history', [ProfileController::class, 'history']);
