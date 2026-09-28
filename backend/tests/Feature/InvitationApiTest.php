@@ -35,6 +35,7 @@ class InvitationApiTest extends TestCase
     {
         [$admin, $event, $selection] = $this->context();
         $this->actingAs($admin);
+        config(['dinee.frontend_url' => 'https://app.ledinee.test']);
 
         $created = $this->postJson("/api/v1/admin/events/{$event->id}/invitations", ['selection_id' => $selection->id])
             ->assertCreated()->assertJsonPath('data.status', 'pending')
@@ -42,6 +43,11 @@ class InvitationApiTest extends TestCase
         $plainTextToken = $created->json('data.public_token');
         $this->assertIsString($plainTextToken);
         $this->assertMatchesRegularExpression('/^[A-Za-z0-9_-]{43}$/', $plainTextToken);
+        $this->assertSame("https://app.ledinee.test/invitation/{$plainTextToken}", $created->json('data.public_url'));
+        $this->assertStringStartsWith('https://wa.me/243810000001?text=', $created->json('data.whatsapp_url'));
+        $this->assertStringContainsString('Bonjour Patrick,', $created->json('data.whatsapp_message'));
+        $this->assertStringContainsString($event->title, $created->json('data.whatsapp_message'));
+        $this->assertStringContainsString($created->json('data.public_url'), $created->json('data.whatsapp_message'));
         $invitation = Invitation::sole();
         $this->assertSame(InvitationToken::hash($plainTextToken), $invitation->getRawOriginal('token_hash'));
         $this->assertTrue($invitation->token_expires_at->equalTo($event->starts_at));
@@ -118,7 +124,8 @@ class InvitationApiTest extends TestCase
             'status' => EventStatus::Upcoming,
             'starts_at' => now()->addMonth(),
         ]);
-        $selection = EventSelection::factory()->for($event)->for(Profile::factory())->create(['selected_by' => $admin->id]);
+        $profile = Profile::factory()->create(['first_name' => 'Patrick', 'phone' => '+243810000001']);
+        $selection = EventSelection::factory()->for($event)->for($profile)->create(['selected_by' => $admin->id]);
 
         return [$admin, $event, $selection];
     }

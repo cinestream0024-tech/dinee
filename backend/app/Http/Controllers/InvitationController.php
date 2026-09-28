@@ -9,6 +9,7 @@ use App\Models\Event;
 use App\Models\EventSelection;
 use App\Models\Invitation;
 use App\Services\InvitationService;
+use App\Services\InvitationWhatsAppMessage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
@@ -35,8 +36,12 @@ class InvitationController extends Controller
         );
     }
 
-    public function store(CreateInvitationRequest $request, Event $event, InvitationService $service): JsonResponse
-    {
+    public function store(
+        CreateInvitationRequest $request,
+        Event $event,
+        InvitationService $service,
+        InvitationWhatsAppMessage $whatsAppMessage
+    ): JsonResponse {
         $result = $service->create(
             $event,
             EventSelection::findOrFail($request->validated('selection_id'))
@@ -44,6 +49,10 @@ class InvitationController extends Controller
         $data = (new InvitationResource($result['invitation']))->resolve($request);
         if ($result['plain_text_token']) {
             $data['public_token'] = $result['plain_text_token'];
+            $data = [
+                ...$data,
+                ...$whatsAppMessage->compose($result['invitation'], $result['plain_text_token']),
+            ];
         }
 
         return response()->json(
