@@ -22,6 +22,8 @@ class InvitationController extends Controller
         $query = Invitation::query()
             ->whereHas('selection', fn ($query) => $query->where('event_id', $event->id))
             ->with('selection.profile', 'selection.event')
+            ->withCount('followUps')
+            ->withMax('followUps', 'sent_at')
             ->latest('id');
 
         if ($status = $request->validated('status')) {
@@ -29,6 +31,9 @@ class InvitationController extends Controller
         }
         if ($request->has('sent')) {
             $request->boolean('sent') ? $query->whereNotNull('sent_at') : $query->whereNull('sent_at');
+        }
+        if ($request->boolean('follow_up_due')) {
+            $query->dueForFollowUp();
         }
 
         return InvitationResource::collection(

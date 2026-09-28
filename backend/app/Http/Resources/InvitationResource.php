@@ -17,6 +17,9 @@ class InvitationResource extends JsonResource
             'future_interest' => $this->future_interest,
             'token_expires_at' => $this->token_expires_at->toISOString(),
             'token_revoked_at' => $this->token_revoked_at?->toISOString(),
+            'follow_up_count' => $this->whenCounted('followUps'),
+            'last_follow_up_at' => $this->follow_ups_max_sent_at?->toISOString(),
+            'is_follow_up_due' => $this->isDueForFollowUp(),
             'selection' => [
                 'id' => $this->selection->id,
                 'selected_at' => $this->selection->selected_at->toISOString(),

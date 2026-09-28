@@ -18,6 +18,7 @@ class ListInvitationsRequest extends FormRequest
         return [
             'status' => ['nullable', Rule::enum(InvitationStatus::class)],
             'sent' => ['nullable', 'boolean'],
+            'follow_up_due' => ['nullable', 'boolean'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ];
     }

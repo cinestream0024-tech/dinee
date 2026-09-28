@@ -7,10 +7,12 @@ use App\Enums\InvitationStatus;
 use App\Models\Event;
 use App\Models\EventSelection;
 use App\Models\Invitation;
+use App\Models\InvitationFollowUp;
 use App\Models\Profile;
 use App\Models\User;
 use App\Support\InvitationToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class InvitationApiTest extends TestCase
@@ -166,6 +168,58 @@ class InvitationApiTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors('status');
         $this->assertSame($originalHash, $invitation->fresh()->getRawOriginal('token_hash'));
+    }
+
+    public function test_follow_up_due_filter_uses_the_configured_delay_and_latest_contact(): void
+    {
+        $this->travelTo(now()->startOfSecond());
+        config(['dinee.follow_up_delay_hours' => 48]);
+        [$admin, $event, $selection] = $this->context();
+        $this->actingAs($admin);
+
+        $due = Invitation::factory()->for($selection, 'selection')->create([
+            'sent_at' => now()->subHours(49),
+            'token_expires_at' => $event->starts_at,
+        ]);
+        $recent = Invitation::factory()->for(EventSelection::factory()->for($event)->for(Profile::factory()), 'selection')->create([
+            'sent_at' => now()->subHours(47),
+            'token_expires_at' => $event->starts_at,
+        ]);
+        $followedUp = Invitation::factory()->for(EventSelection::factory()->for($event)->for(Profile::factory()), 'selection')->create([
+            'sent_at' => now()->subHours(72),
+            'token_expires_at' => $event->starts_at,
+        ]);
+        InvitationFollowUp::query()->forceCreate([
+            'invitation_id' => $followedUp->id,
+            'recorded_by' => $admin->id,
+            'sent_at' => now()->subHours(2),
+            'operation_id' => Str::uuid(),
+        ]);
+        $revoked = Invitation::factory()->for(EventSelection::factory()->for($event)->for(Profile::factory()), 'selection')->create([
+            'sent_at' => now()->subHours(49),
+            'token_expires_at' => $event->starts_at,
+            'token_revoked_at' => now()->subHour(),
+        ]);
+        Invitation::factory()->for(EventSelection::factory()->for($event)->for(Profile::factory()), 'selection')->create([
+            'status' => InvitationStatus::Accepted,
+            'sent_at' => now()->subHours(72),
+            'responded_at' => now()->subHours(60),
+            'token_expires_at' => $event->starts_at,
+        ]);
+
+        $response = $this->getJson("/api/v1/admin/events/{$event->id}/invitations?follow_up_due=1")
+            ->assertOk()
+            ->assertJsonPath('meta.total', 2);
+        $this->assertEqualsCanonicalizing([$due->id, $revoked->id], collect($response->json('data'))->pluck('id')->all());
+        $response->assertJsonPath('data.0.is_follow_up_due', true)
+            ->assertJsonPath('data.1.is_follow_up_due', true);
+
+        $all = $this->getJson("/api/v1/admin/events/{$event->id}/invitations")->assertOk();
+        $byId = collect($all->json('data'))->keyBy('id');
+        $this->assertFalse($byId[$recent->id]['is_follow_up_due']);
+        $this->assertFalse($byId[$followedUp->id]['is_follow_up_due']);
+        $this->assertSame(1, $byId[$followedUp->id]['follow_up_count']);
+        $this->assertNotNull($byId[$followedUp->id]['last_follow_up_at']);
     }
 
     public function test_admin_lists_filters_and_views_without_token_hashes(): void
