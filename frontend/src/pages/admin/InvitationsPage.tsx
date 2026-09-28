@@ -13,6 +13,9 @@ import { apiErrorMessageKey } from "@/components/admin/apiErrors";
 import PageBreadCrumb from "@/components/common/PageBreadCrumb";
 import PageMeta from "@/components/common/PageMeta";
 import InvitationDeliveryModal from "@/components/invitations/InvitationDeliveryModal";
+import InvitationFilters, {
+  type InvitationFilterValues,
+} from "@/components/invitations/InvitationFilters";
 import InvitationQueue from "@/components/invitations/InvitationQueue";
 import InvitationStatusBadge from "@/components/invitations/InvitationStatusBadge";
 import ProfileAvatar from "@/components/profiles/ProfileAvatar";
@@ -24,17 +27,27 @@ import {
   invitationKeys,
   listInvitations,
   markInvitationSent,
+  recordInvitationFollowUp,
   rotateInvitationToken,
 } from "@/features/invitations/api";
 import { listSelections, selectionKeys } from "@/features/selections/api";
-import { DineeMailIcon, DineePhoneIcon, DineeSendIcon } from "@/icons";
+import {
+  DineeClockIcon,
+  DineeMailIcon,
+  DineePhoneIcon,
+  DineeSendIcon,
+} from "@/icons";
 import type {
   EventSelection,
   InvitationDelivery,
   InvitationMutationResult,
 } from "@/types/dinee";
 
-type PreparedInvitation = InvitationDelivery & { invitationId: number };
+type PreparedInvitation = InvitationDelivery & {
+  invitationId: number;
+  mode: "initial" | "followUp";
+  operationId?: string;
+};
 
 function hasDelivery(
   invitation: InvitationMutationResult,
@@ -58,6 +71,11 @@ export default function InvitationsPage() {
   const [params, setParams] = useSearchParams();
   const requestedEventId = Number(params.get("event") ?? 0);
   const page = Math.max(1, Number(params.get("page") ?? 1));
+  const filters: InvitationFilterValues = {
+    status: (params.get("status") ?? "") as InvitationFilterValues["status"],
+    sent: (params.get("sent") ?? "") as InvitationFilterValues["sent"],
+    followUpDue: params.get("follow_up_due") === "1",
+  };
 
   const eventsQuery = useQuery({
     queryKey: eventKeys.list({ page: 1, perPage: 100 }),
@@ -70,9 +88,16 @@ export default function InvitationsPage() {
     events.find((event) => event.id === requestedEventId) ?? fallbackEvent;
   const eventId = selectedEvent?.id;
 
+  const invitationListFilters = {
+    page,
+    perPage: 20,
+    status: filters.status,
+    sent: filters.sent ? filters.sent === "sent" : undefined,
+    followUpDue: filters.followUpDue,
+  };
   const invitationsQuery = useQuery({
-    queryKey: invitationKeys.list(eventId ?? 0, { page, perPage: 20 }),
-    queryFn: () => listInvitations(eventId!, { page, perPage: 20 }),
+    queryKey: invitationKeys.list(eventId ?? 0, invitationListFilters),
+    queryFn: () => listInvitations(eventId!, invitationListFilters),
     enabled: Boolean(eventId),
   });
   const coverageQuery = useQuery({
@@ -101,7 +126,10 @@ export default function InvitationsPage() {
     if (!eventId) return;
     await client.invalidateQueries({ queryKey: invitationKeys.admin(eventId) });
   };
-  const showDelivery = (invitation: InvitationMutationResult) => {
+  const showDelivery = (
+    invitation: InvitationMutationResult,
+    mode: "initial" | "followUp",
+  ) => {
     if (!hasDelivery(invitation)) {
       setActionError(t("dinee.unexpectedError"));
       return;
@@ -109,6 +137,8 @@ export default function InvitationsPage() {
     setActionError(null);
     setDelivery({
       invitationId: invitation.id,
+      mode,
+      operationId: mode === "followUp" ? crypto.randomUUID() : undefined,
       public_token: invitation.public_token,
       public_url: invitation.public_url,
       whatsapp_message: invitation.whatsapp_message,
@@ -120,28 +150,48 @@ export default function InvitationsPage() {
     mutationFn: (selection: EventSelection) =>
       createInvitation(eventId!, selection.id),
     onSuccess: async (response) => {
-      showDelivery(response.data);
+      showDelivery(response.data, "initial");
       setNotice(t("dinee.invitationCreated"));
       await refreshInvitations();
     },
     onError: (error) => setActionError(t(apiErrorMessageKey(error))),
   });
   const prepareMutation = useMutation({
-    mutationFn: (invitationId: number) => rotateInvitationToken(invitationId),
-    onSuccess: (response) => showDelivery(response.data),
+    mutationFn: ({
+      invitationId,
+    }: {
+      invitationId: number;
+      mode: "initial" | "followUp";
+    }) => rotateInvitationToken(invitationId),
+    onSuccess: (response, variables) =>
+      showDelivery(response.data, variables.mode),
     onError: (error) => setActionError(t(apiErrorMessageKey(error))),
   });
   const markSentMutation = useMutation({
-    mutationFn: () => markInvitationSent(delivery!.invitationId),
+    mutationFn: () =>
+      delivery!.mode === "followUp"
+        ? recordInvitationFollowUp(
+            delivery!.invitationId,
+            delivery!.operationId!,
+          )
+        : markInvitationSent(delivery!.invitationId),
     onSuccess: async () => {
+      const completedMode = delivery!.mode;
       await refreshInvitations();
-      setNotice(t("dinee.invitationMarkedSent"));
+      setNotice(
+        t(
+          `dinee.${completedMode === "followUp" ? "followUpMarkedSent" : "invitationMarkedSent"}`,
+        ),
+      );
       deliveryModal.closeModal();
       setDelivery(null);
     },
   });
 
   const canInvite = selectedEvent?.status === "upcoming";
+  const hasFilters = Boolean(
+    filters.status || filters.sent || filters.followUpDue,
+  );
 
   const formatDate = (value: string | null) =>
     value
@@ -155,6 +205,22 @@ export default function InvitationsPage() {
     const next = new URLSearchParams(params);
     next.set("event", value);
     next.delete("page");
+    setParams(next);
+  };
+  const updateFilter = (
+    key: keyof InvitationFilterValues,
+    value: string | boolean,
+  ) => {
+    const next = new URLSearchParams(params);
+    const parameter = key === "followUpDue" ? "follow_up_due" : key;
+    if (value) next.set(parameter, typeof value === "boolean" ? "1" : value);
+    else next.delete(parameter);
+    next.delete("page");
+    setParams(next);
+  };
+  const resetFilters = () => {
+    const next = new URLSearchParams();
+    if (eventId) next.set("event", String(eventId));
     setParams(next);
   };
   const selectPage = (nextPage: number) => {
@@ -233,6 +299,11 @@ export default function InvitationsPage() {
       />
 
       <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/3">
+        <InvitationFilters
+          filters={filters}
+          onChange={updateFilter}
+          onReset={resetFilters}
+        />
         {eventsQuery.isPending ? (
           <LoadingTable />
         ) : eventsQuery.isError ? (
@@ -249,7 +320,11 @@ export default function InvitationsPage() {
         ) : invitationsQuery.data.data.length === 0 ? (
           <EmptyState
             title={t("dinee.noInvitations")}
-            description={t("dinee.noInvitationsDescription")}
+            description={t(
+              hasFilters
+                ? "dinee.noFilteredInvitationsDescription"
+                : "dinee.noInvitationsDescription",
+            )}
           />
         ) : (
           <>
@@ -289,7 +364,10 @@ export default function InvitationsPage() {
                           <button
                             type="button"
                             onClick={() =>
-                              prepareMutation.mutate(invitation.id)
+                              prepareMutation.mutate({
+                                invitationId: invitation.id,
+                                mode: "initial",
+                              })
                             }
                             disabled={prepareMutation.isPending}
                             className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-brand-500/10 dark:hover:text-brand-400"
@@ -301,6 +379,25 @@ export default function InvitationsPage() {
                             {t("dinee.prepareWhatsApp")}
                           </button>
                         )}
+                      {invitation.is_follow_up_due && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            prepareMutation.mutate({
+                              invitationId: invitation.id,
+                              mode: "followUp",
+                            })
+                          }
+                          disabled={prepareMutation.isPending}
+                          className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-warning-500 px-3 text-sm font-medium text-white hover:bg-warning-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-warning-500 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <DineeClockIcon
+                            className="size-4"
+                            aria-hidden="true"
+                          />
+                          {t("dinee.followUpWhatsApp")}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </article>
@@ -379,6 +476,15 @@ export default function InvitationsPage() {
                           {invitation.sent_at
                             ? formatDate(invitation.sent_at)
                             : t("dinee.notSent")}
+                          {invitation.is_follow_up_due && (
+                            <span className="mt-1 flex items-center gap-1 text-theme-xs font-medium text-warning-600 dark:text-warning-400">
+                              <DineeClockIcon
+                                className="size-3.5"
+                                aria-hidden="true"
+                              />
+                              {t("dinee.toFollowUp")}
+                            </span>
+                          )}
                         </td>
                         <td className="px-5 py-4">
                           {invitation.status === "pending" &&
@@ -386,7 +492,10 @@ export default function InvitationsPage() {
                               <button
                                 type="button"
                                 onClick={() =>
-                                  prepareMutation.mutate(invitation.id)
+                                  prepareMutation.mutate({
+                                    invitationId: invitation.id,
+                                    mode: "initial",
+                                  })
                                 }
                                 disabled={prepareMutation.isPending}
                                 className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-brand-500/10 dark:hover:text-brand-400"
@@ -398,6 +507,25 @@ export default function InvitationsPage() {
                                 {t("dinee.prepareWhatsApp")}
                               </button>
                             )}
+                          {invitation.is_follow_up_due && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                prepareMutation.mutate({
+                                  invitationId: invitation.id,
+                                  mode: "followUp",
+                                })
+                              }
+                              disabled={prepareMutation.isPending}
+                              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-warning-500 px-3 text-sm font-medium text-white hover:bg-warning-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-warning-500 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <DineeClockIcon
+                                className="size-4"
+                                aria-hidden="true"
+                              />
+                              {t("dinee.followUpWhatsApp")}
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -414,6 +542,7 @@ export default function InvitationsPage() {
       </section>
       <InvitationDeliveryModal
         isOpen={deliveryModal.isOpen}
+        mode={delivery?.mode ?? "initial"}
         delivery={delivery}
         isMarkingSent={markSentMutation.isPending}
         errorMessage={

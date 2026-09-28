@@ -7,12 +7,14 @@ import { useTranslation } from "react-i18next";
 export default function InvitationDeliveryModal({
   isOpen,
   delivery,
+  mode,
   isMarkingSent,
   errorMessage,
   onClose,
   onMarkSent,
 }: {
   isOpen: boolean;
+  mode: "initial" | "followUp";
   delivery: InvitationDelivery | null;
   isMarkingSent: boolean;
   errorMessage: string | null;
@@ -28,7 +30,9 @@ export default function InvitationDeliveryModal({
       isOpen={isOpen}
       onClose={onClose}
       title={t("dinee.whatsappInvitation")}
-      description={t("dinee.whatsappNotice")}
+      description={t(
+        `dinee.${mode === "followUp" ? "followUpWhatsAppNotice" : "whatsappNotice"}`,
+      )}
       width="max-w-xl"
       busy={isMarkingSent}
     >
