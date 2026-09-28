@@ -28,7 +28,10 @@ class InvitationApiTest extends TestCase
         $this->postJson("/api/v1/admin/events/{$event->id}/invitations", ['selection_id' => $selection->id])->assertForbidden();
         $this->getJson("/api/v1/admin/invitations/{$invitation->id}")->assertForbidden();
         $this->postJson("/api/v1/admin/invitations/{$invitation->id}/mark-sent")->assertForbidden();
+        $this->postJson("/api/v1/admin/invitations/{$invitation->id}/rotate-token")->assertForbidden();
+        $this->postJson("/api/v1/admin/invitations/{$invitation->id}/revoke-token")->assertForbidden();
         $this->postJson("/api/v1/admin/invitations/{$invitation->id}/cancel")->assertForbidden();
+        $this->assertNull($invitation->fresh()->token_revoked_at);
     }
 
     public function test_admin_creates_an_invitation_once_and_receives_the_token_only_once(): void
@@ -95,6 +98,74 @@ class InvitationApiTest extends TestCase
             ->assertOk()->assertJsonPath('data.token_revoked_at', $revokedAt);
         $this->postJson("/api/v1/admin/invitations/{$invitation->id}/mark-sent")
             ->assertUnprocessable()->assertJsonValidationErrors('status');
+    }
+
+    public function test_admin_rotates_a_token_and_the_old_public_link_stops_working(): void
+    {
+        [$admin, $event, $selection] = $this->context();
+        $oldToken = InvitationToken::issue();
+        $sentAt = now()->subHour()->startOfSecond();
+        $invitation = Invitation::factory()->for($selection, 'selection')->create([
+            'token_hash' => $oldToken['hash'],
+            'token_expires_at' => $event->starts_at,
+            'sent_at' => $sentAt,
+        ]);
+        $this->actingAs($admin);
+        config(['dinee.frontend_url' => 'https://app.ledinee.test']);
+
+        $this->getJson("/api/v1/public/invitations/{$oldToken['plain_text']}")->assertOk();
+        $response = $this->postJson("/api/v1/admin/invitations/{$invitation->id}/rotate-token")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'pending')
+            ->assertJsonPath('data.sent_at', $sentAt->toISOString())
+            ->assertJsonMissingPath('data.token_hash');
+
+        $newToken = $response->json('data.public_token');
+        $this->assertNotSame($oldToken['plain_text'], $newToken);
+        $this->assertSame("https://app.ledinee.test/invitation/{$newToken}", $response->json('data.public_url'));
+        $this->assertSame(InvitationToken::hash($newToken), $invitation->fresh()->getRawOriginal('token_hash'));
+        $this->assertNull($invitation->fresh()->token_revoked_at);
+        $this->getJson("/api/v1/public/invitations/{$oldToken['plain_text']}")->assertNotFound();
+        $this->getJson("/api/v1/public/invitations/{$newToken}")->assertOk();
+    }
+
+    public function test_admin_revokes_a_token_idempotently_without_cancelling_the_invitation(): void
+    {
+        [$admin, $event, $selection] = $this->context();
+        $token = InvitationToken::issue();
+        $invitation = Invitation::factory()->for($selection, 'selection')->create([
+            'token_hash' => $token['hash'],
+            'token_expires_at' => $event->starts_at,
+        ]);
+        $this->actingAs($admin);
+
+        $revokedAt = $this->postJson("/api/v1/admin/invitations/{$invitation->id}/revoke-token")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'pending')
+            ->json('data.token_revoked_at');
+        $this->assertNotNull($revokedAt);
+        $this->getJson("/api/v1/public/invitations/{$token['plain_text']}")->assertNotFound();
+        $this->postJson("/api/v1/admin/invitations/{$invitation->id}/revoke-token")
+            ->assertOk()
+            ->assertJsonPath('data.token_revoked_at', $revokedAt);
+        $this->assertSame($token['hash'], $invitation->fresh()->getRawOriginal('token_hash'));
+    }
+
+    public function test_cancelled_invitation_cannot_receive_a_new_token(): void
+    {
+        [$admin, $event, $selection] = $this->context();
+        $invitation = Invitation::factory()->for($selection, 'selection')->create([
+            'status' => InvitationStatus::Cancelled,
+            'token_expires_at' => $event->starts_at,
+            'token_revoked_at' => now(),
+        ]);
+        $originalHash = $invitation->getRawOriginal('token_hash');
+        $this->actingAs($admin);
+
+        $this->postJson("/api/v1/admin/invitations/{$invitation->id}/rotate-token")
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('status');
+        $this->assertSame($originalHash, $invitation->fresh()->getRawOriginal('token_hash'));
     }
 
     public function test_admin_lists_filters_and_views_without_token_hashes(): void

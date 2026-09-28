@@ -75,6 +75,31 @@ class InvitationController extends Controller
         return new InvitationResource($service->markSent($invitation));
     }
 
+    public function rotateToken(
+        Invitation $invitation,
+        InvitationService $service,
+        InvitationWhatsAppMessage $whatsAppMessage,
+    ): JsonResponse {
+        Gate::authorize('update', $invitation);
+
+        $result = $service->rotateToken($invitation);
+        $data = (new InvitationResource($result['invitation']))->resolve(request());
+        $data['public_token'] = $result['plain_text_token'];
+        $data = [
+            ...$data,
+            ...$whatsAppMessage->compose($result['invitation'], $result['plain_text_token']),
+        ];
+
+        return response()->json(['data' => $data]);
+    }
+
+    public function revokeToken(Invitation $invitation, InvitationService $service): InvitationResource
+    {
+        Gate::authorize('update', $invitation);
+
+        return new InvitationResource($service->revokeToken($invitation));
+    }
+
     public function cancel(Invitation $invitation, InvitationService $service): InvitationResource
     {
         Gate::authorize('update', $invitation);

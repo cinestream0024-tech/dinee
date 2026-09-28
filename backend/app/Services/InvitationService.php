@@ -99,6 +99,46 @@ class InvitationService
         });
     }
 
+    /**
+     * @return array{invitation: Invitation, plain_text_token: string}
+     */
+    public function rotateToken(Invitation $invitation): array
+    {
+        return DB::transaction(function () use ($invitation) {
+            [$event, $selection, $invitation] = $this->lockContext($invitation);
+            $this->assertActiveFutureContext($event, $selection);
+
+            if ($invitation->status === InvitationStatus::Cancelled) {
+                throw ValidationException::withMessages(['status' => ['cancelled_invitation']]);
+            }
+
+            $token = InvitationToken::issue();
+            $invitation->forceFill([
+                'token_hash' => $token['hash'],
+                'token_expires_at' => $event->starts_at,
+                'token_revoked_at' => null,
+            ])->save();
+
+            return [
+                'invitation' => $invitation->load('selection.profile', 'selection.event'),
+                'plain_text_token' => $token['plain_text'],
+            ];
+        });
+    }
+
+    public function revokeToken(Invitation $invitation): Invitation
+    {
+        return DB::transaction(function () use ($invitation) {
+            [, , $invitation] = $this->lockContext($invitation);
+
+            if (! $invitation->token_revoked_at) {
+                $invitation->forceFill(['token_revoked_at' => now()])->save();
+            }
+
+            return $invitation->load('selection.profile', 'selection.event');
+        });
+    }
+
     public function cancel(Invitation $invitation): Invitation
     {
         return DB::transaction(function () use ($invitation) {
