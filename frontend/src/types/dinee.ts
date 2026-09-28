@@ -99,3 +99,49 @@ export interface ProfileHistoryEntry {
     | "absent";
   selected_at: string;
 }
+export type InvitationStatus =
+  "pending" | "accepted" | "declined" | "cancelled";
+
+export interface AdminInvitation {
+  id: number;
+  status: InvitationStatus;
+  sent_at: string | null;
+  responded_at: string | null;
+  future_interest: boolean | null;
+  token_expires_at: string;
+  token_revoked_at: string | null;
+  follow_up_count?: number;
+  last_follow_up_at: string | null;
+  is_follow_up_due: boolean;
+  selection: EventSelection;
+  event: Pick<DineeEvent, "id" | "title" | "starts_at">;
+}
+
+export interface InvitationDelivery {
+  public_token: string;
+  public_url: string;
+  whatsapp_message: string;
+  whatsapp_url: string;
+}
+
+export type InvitationMutationResult = AdminInvitation &
+  Partial<InvitationDelivery>;
+
+export interface PublicInvitation {
+  status: InvitationStatus;
+  future_interest: boolean | null;
+  responded_at: string | null;
+  expires_at: string;
+  event: {
+    title: string;
+    starts_at: string | null;
+    timezone: string;
+    location: string | null;
+    description: string | null;
+  };
+}
+
+export interface PublicInvitationResponsePayload {
+  response: "accepted" | "declined";
+  future_interest?: boolean;
+}
