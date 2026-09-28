@@ -3,6 +3,7 @@
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\FoundationController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\MemberProfileController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfileImportController;
 use App\Http\Controllers\PublicInvitationController;
@@ -19,6 +20,11 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/auth/user', [SessionController::class, 'show']);
+
+        Route::prefix('member')->middleware('member')->group(function () {
+            Route::get('/profile', [MemberProfileController::class, 'show']);
+            Route::patch('/profile', [MemberProfileController::class, 'update']);
+        });
 
         Route::prefix('admin')->middleware('admin')->group(function () {
             Route::get('/foundation', [FoundationController::class, 'admin']);

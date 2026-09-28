@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\PrivateApiHeaders;
 use App\Http\Middleware\RequireAdmin;
+use App\Http\Middleware\RequireMember;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,7 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
         $middleware->append(PrivateApiHeaders::class);
-        $middleware->alias(['admin' => RequireAdmin::class]);
+        $middleware->alias(['admin' => RequireAdmin::class, 'member' => RequireMember::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(fn (Request $request) => $request->is('api/*') || $request->expectsJson());
