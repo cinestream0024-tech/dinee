@@ -32,8 +32,10 @@ class InvitationApiTest extends TestCase
         $this->postJson("/api/v1/admin/invitations/{$invitation->id}/mark-sent")->assertForbidden();
         $this->postJson("/api/v1/admin/invitations/{$invitation->id}/rotate-token")->assertForbidden();
         $this->postJson("/api/v1/admin/invitations/{$invitation->id}/revoke-token")->assertForbidden();
+        $this->postJson("/api/v1/admin/invitations/{$invitation->id}/follow-ups", ['operation_id' => Str::uuid()])->assertForbidden();
         $this->postJson("/api/v1/admin/invitations/{$invitation->id}/cancel")->assertForbidden();
         $this->assertNull($invitation->fresh()->token_revoked_at);
+        $this->assertDatabaseCount('invitation_follow_ups', 0);
     }
 
     public function test_admin_creates_an_invitation_once_and_receives_the_token_only_once(): void
@@ -168,6 +170,72 @@ class InvitationApiTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors('status');
         $this->assertSame($originalHash, $invitation->fresh()->getRawOriginal('token_hash'));
+    }
+
+    public function test_admin_records_a_due_follow_up_idempotently_with_server_time(): void
+    {
+        $this->travelTo(now()->startOfSecond());
+        config(['dinee.follow_up_delay_hours' => 48]);
+        [$admin, $event, $selection] = $this->context();
+        $invitation = Invitation::factory()->for($selection, 'selection')->create([
+            'sent_at' => now()->subHours(49),
+            'token_expires_at' => $event->starts_at,
+        ]);
+        $otherInvitation = Invitation::factory()->for(EventSelection::factory()->for($event)->for(Profile::factory()), 'selection')->create([
+            'sent_at' => now()->subHours(49),
+            'token_expires_at' => $event->starts_at,
+        ]);
+        $operationId = Str::uuid()->toString();
+        $this->actingAs($admin);
+
+        $response = $this->postJson("/api/v1/admin/invitations/{$invitation->id}/follow-ups", [
+            'operation_id' => $operationId,
+        ])->assertOk()
+            ->assertJsonPath('data.follow_up_count', 1)
+            ->assertJsonPath('data.last_follow_up_at', now()->toISOString())
+            ->assertJsonPath('data.is_follow_up_due', false);
+        $lastFollowUpAt = $response->json('data.last_follow_up_at');
+
+        $this->postJson("/api/v1/admin/invitations/{$invitation->id}/follow-ups", [
+            'operation_id' => $operationId,
+        ])->assertOk()
+            ->assertJsonPath('data.follow_up_count', 1)
+            ->assertJsonPath('data.last_follow_up_at', $lastFollowUpAt);
+        $this->assertDatabaseCount('invitation_follow_ups', 1);
+        $this->assertDatabaseHas('invitation_follow_ups', [
+            'invitation_id' => $invitation->id,
+            'recorded_by' => $admin->id,
+            'operation_id' => $operationId,
+        ]);
+
+        $this->postJson("/api/v1/admin/invitations/{$otherInvitation->id}/follow-ups", [
+            'operation_id' => $operationId,
+        ])->assertUnprocessable()->assertJsonValidationErrors('operation_id');
+        $this->assertDatabaseCount('invitation_follow_ups', 1);
+    }
+
+    public function test_follow_up_rejects_an_unsent_or_not_yet_due_invitation(): void
+    {
+        $this->travelTo(now()->startOfSecond());
+        config(['dinee.follow_up_delay_hours' => 48]);
+        [$admin, $event, $selection] = $this->context();
+        $unsent = Invitation::factory()->for($selection, 'selection')->create([
+            'sent_at' => null,
+            'token_expires_at' => $event->starts_at,
+        ]);
+        $recent = Invitation::factory()->for(EventSelection::factory()->for($event)->for(Profile::factory()), 'selection')->create([
+            'sent_at' => now()->subHours(47),
+            'token_expires_at' => $event->starts_at,
+        ]);
+        $this->actingAs($admin);
+
+        $this->postJson("/api/v1/admin/invitations/{$unsent->id}/follow-ups", [
+            'operation_id' => Str::uuid(),
+        ])->assertUnprocessable()->assertJsonValidationErrors('invitation');
+        $this->postJson("/api/v1/admin/invitations/{$recent->id}/follow-ups", [
+            'operation_id' => Str::uuid(),
+        ])->assertUnprocessable()->assertJsonValidationErrors('invitation');
+        $this->assertDatabaseCount('invitation_follow_ups', 0);
     }
 
     public function test_follow_up_due_filter_uses_the_configured_delay_and_latest_contact(): void

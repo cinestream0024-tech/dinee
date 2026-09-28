@@ -7,6 +7,8 @@ use App\Enums\InvitationStatus;
 use App\Models\Event;
 use App\Models\EventSelection;
 use App\Models\Invitation;
+use App\Models\InvitationFollowUp;
+use App\Models\User;
 use App\Support\InvitationToken;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -126,6 +128,39 @@ class InvitationService
         });
     }
 
+    public function recordFollowUp(Invitation $invitation, User $recordedBy, string $operationId): Invitation
+    {
+        return DB::transaction(function () use ($invitation, $recordedBy, $operationId) {
+            [$event, $selection, $invitation] = $this->lockContext($invitation);
+
+            $existing = InvitationFollowUp::where('operation_id', $operationId)->first();
+            if ($existing) {
+                if ($existing->invitation_id !== $invitation->id || $existing->recorded_by !== $recordedBy->id) {
+                    throw ValidationException::withMessages(['operation_id' => ['operation_id_already_used']]);
+                }
+
+                return $this->loadFollowUpState($invitation);
+            }
+
+            $this->assertActiveFutureContext($event, $selection);
+            if ($invitation->status !== InvitationStatus::Pending || ! $invitation->sent_at) {
+                throw ValidationException::withMessages(['invitation' => ['pending_sent_invitation_required']]);
+            }
+            if (! Invitation::query()->whereKey($invitation->id)->dueForFollowUp()->exists()) {
+                throw ValidationException::withMessages(['invitation' => ['follow_up_not_due']]);
+            }
+
+            InvitationFollowUp::query()->forceCreate([
+                'invitation_id' => $invitation->id,
+                'recorded_by' => $recordedBy->id,
+                'sent_at' => now(),
+                'operation_id' => $operationId,
+            ]);
+
+            return $this->loadFollowUpState($invitation);
+        });
+    }
+
     public function revokeToken(Invitation $invitation): Invitation
     {
         return DB::transaction(function () use ($invitation) {
@@ -152,6 +187,14 @@ class InvitationService
 
             return $invitation->load('selection.profile', 'selection.event');
         });
+    }
+
+    private function loadFollowUpState(Invitation $invitation): Invitation
+    {
+        return $invitation->fresh()
+            ->load('selection.profile', 'selection.event')
+            ->loadCount('followUps')
+            ->loadMax('followUps', 'sent_at');
     }
 
     private function findByPlainTextToken(string $plainTextToken): Invitation

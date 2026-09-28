@@ -32,6 +32,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/invitations/{invitation}/mark-sent', [InvitationController::class, 'markSent']);
             Route::post('/invitations/{invitation}/rotate-token', [InvitationController::class, 'rotateToken']);
             Route::post('/invitations/{invitation}/revoke-token', [InvitationController::class, 'revokeToken']);
+            Route::post('/invitations/{invitation}/follow-ups', [InvitationController::class, 'recordFollowUp']);
             Route::post('/invitations/{invitation}/cancel', [InvitationController::class, 'cancel']);
             Route::post('/profiles/import/preview', [ProfileImportController::class, 'preview']);
             Route::post('/profiles/import', [ProfileImportController::class, 'store']);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CreateInvitationRequest;
 use App\Http\Requests\ListInvitationsRequest;
+use App\Http\Requests\RecordInvitationFollowUpRequest;
 use App\Http\Resources\InvitationResource;
 use App\Models\Event;
 use App\Models\EventSelection;
@@ -96,6 +97,18 @@ class InvitationController extends Controller
         ];
 
         return response()->json(['data' => $data]);
+    }
+
+    public function recordFollowUp(
+        RecordInvitationFollowUpRequest $request,
+        Invitation $invitation,
+        InvitationService $service,
+    ): InvitationResource {
+        return new InvitationResource($service->recordFollowUp(
+            $invitation,
+            $request->user(),
+            $request->validated('operation_id'),
+        ));
     }
 
     public function revokeToken(Invitation $invitation, InvitationService $service): InvitationResource
