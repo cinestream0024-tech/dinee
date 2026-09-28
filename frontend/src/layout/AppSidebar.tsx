@@ -4,6 +4,7 @@ import {
   DineeDashboardIcon,
   DineeUsersIcon,
   DineeMoreIcon,
+  DineeSendIcon,
 } from "@/icons";
 import { cn } from "@/utils";
 import { useEffect } from "react";
@@ -14,6 +15,12 @@ const items = [
   { to: "/admin", key: "adminHome", Icon: DineeDashboardIcon, end: true },
   { to: "/admin/events", key: "events", Icon: DineeCalendarIcon, end: false },
   { to: "/admin/network", key: "network", Icon: DineeUsersIcon, end: false },
+  {
+    to: "/admin/invitations",
+    key: "invitations",
+    Icon: DineeSendIcon,
+    end: false,
+  },
 ] as const;
 
 export default function AppSidebar() {

@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 
 const EventsPage = lazy(() => import("@/pages/admin/EventsPage"));
 const NetworkPage = lazy(() => import("@/pages/admin/NetworkPage"));
+const InvitationsPage = lazy(() => import("@/pages/admin/InvitationsPage"));
 
 function RouteFallback() {
   const { t } = useTranslation();
@@ -51,6 +52,14 @@ export default function App() {
               element={
                 <Suspense fallback={<RouteFallback />}>
                   <EventsPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="invitations"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <InvitationsPage />
                 </Suspense>
               }
             />
