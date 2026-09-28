@@ -1,24 +1,60 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
 import {
   EmptyState,
   ErrorState,
   LoadingTable,
+  MutationError,
 } from "@/components/admin/AsyncState";
 import Pagination from "@/components/admin/Pagination";
+import { apiErrorMessageKey } from "@/components/admin/apiErrors";
 import PageBreadCrumb from "@/components/common/PageBreadCrumb";
 import PageMeta from "@/components/common/PageMeta";
+import InvitationDeliveryModal from "@/components/invitations/InvitationDeliveryModal";
+import InvitationQueue from "@/components/invitations/InvitationQueue";
 import InvitationStatusBadge from "@/components/invitations/InvitationStatusBadge";
 import ProfileAvatar from "@/components/profiles/ProfileAvatar";
 import { useLanguage } from "@/context/LanguageContext";
+import { useModal } from "@/hooks/useModal";
 import { eventKeys, listEvents } from "@/features/events/api";
-import { invitationKeys, listInvitations } from "@/features/invitations/api";
-import { DineeMailIcon, DineePhoneIcon } from "@/icons";
+import {
+  createInvitation,
+  invitationKeys,
+  listInvitations,
+  markInvitationSent,
+  rotateInvitationToken,
+} from "@/features/invitations/api";
+import { listSelections, selectionKeys } from "@/features/selections/api";
+import { DineeMailIcon, DineePhoneIcon, DineeSendIcon } from "@/icons";
+import type {
+  EventSelection,
+  InvitationDelivery,
+  InvitationMutationResult,
+} from "@/types/dinee";
+
+type PreparedInvitation = InvitationDelivery & { invitationId: number };
+
+function hasDelivery(
+  invitation: InvitationMutationResult,
+): invitation is InvitationMutationResult & InvitationDelivery {
+  return Boolean(
+    invitation.public_token &&
+    invitation.public_url &&
+    invitation.whatsapp_message &&
+    invitation.whatsapp_url,
+  );
+}
 
 export default function InvitationsPage() {
   const { t } = useTranslation();
   const { language } = useLanguage();
+  const client = useQueryClient();
+  const deliveryModal = useModal();
+  const [delivery, setDelivery] = useState<PreparedInvitation | null>(null);
+  const [notice, setNotice] = useState("");
+  const [actionError, setActionError] = useState<string | null>(null);
   const [params, setParams] = useSearchParams();
   const requestedEventId = Number(params.get("event") ?? 0);
   const page = Math.max(1, Number(params.get("page") ?? 1));
@@ -39,6 +75,73 @@ export default function InvitationsPage() {
     queryFn: () => listInvitations(eventId!, { page, perPage: 20 }),
     enabled: Boolean(eventId),
   });
+  const coverageQuery = useQuery({
+    queryKey: invitationKeys.list(eventId ?? 0, { page: 1, perPage: 100 }),
+    queryFn: () => listInvitations(eventId!, { page: 1, perPage: 100 }),
+    enabled: Boolean(eventId),
+  });
+  const selectionsQuery = useQuery({
+    queryKey: selectionKeys.event(eventId ?? 0),
+    queryFn: () => listSelections(eventId!),
+    enabled: Boolean(eventId),
+  });
+  const invitedSelectionIds = useMemo(
+    () => new Set(coverageQuery.data?.data.map((item) => item.selection.id)),
+    [coverageQuery.data],
+  );
+  const selectionsToInvite = useMemo(
+    () =>
+      selectionsQuery.data?.data.filter(
+        (selection) => !invitedSelectionIds.has(selection.id),
+      ) ?? [],
+    [invitedSelectionIds, selectionsQuery.data],
+  );
+
+  const refreshInvitations = async () => {
+    if (!eventId) return;
+    await client.invalidateQueries({ queryKey: invitationKeys.admin(eventId) });
+  };
+  const showDelivery = (invitation: InvitationMutationResult) => {
+    if (!hasDelivery(invitation)) {
+      setActionError(t("dinee.unexpectedError"));
+      return;
+    }
+    setActionError(null);
+    setDelivery({
+      invitationId: invitation.id,
+      public_token: invitation.public_token,
+      public_url: invitation.public_url,
+      whatsapp_message: invitation.whatsapp_message,
+      whatsapp_url: invitation.whatsapp_url,
+    });
+    deliveryModal.openModal();
+  };
+  const createMutation = useMutation({
+    mutationFn: (selection: EventSelection) =>
+      createInvitation(eventId!, selection.id),
+    onSuccess: async (response) => {
+      showDelivery(response.data);
+      setNotice(t("dinee.invitationCreated"));
+      await refreshInvitations();
+    },
+    onError: (error) => setActionError(t(apiErrorMessageKey(error))),
+  });
+  const prepareMutation = useMutation({
+    mutationFn: (invitationId: number) => rotateInvitationToken(invitationId),
+    onSuccess: (response) => showDelivery(response.data),
+    onError: (error) => setActionError(t(apiErrorMessageKey(error))),
+  });
+  const markSentMutation = useMutation({
+    mutationFn: () => markInvitationSent(delivery!.invitationId),
+    onSuccess: async () => {
+      await refreshInvitations();
+      setNotice(t("dinee.invitationMarkedSent"));
+      deliveryModal.closeModal();
+      setDelivery(null);
+    },
+  });
+
+  const canInvite = selectedEvent?.status === "upcoming";
 
   const formatDate = (value: string | null) =>
     value
@@ -101,6 +204,34 @@ export default function InvitationsPage() {
         </label>
       </div>
 
+      {notice && (
+        <div
+          role="status"
+          className="mb-4 rounded-lg border border-success-200 bg-success-50 px-4 py-3 text-sm text-success-700 dark:border-success-500/30 dark:bg-success-500/15 dark:text-success-300"
+        >
+          {notice}
+        </div>
+      )}
+      {actionError && (
+        <div className="mb-4">
+          <MutationError message={actionError} />
+        </div>
+      )}
+
+      <InvitationQueue
+        selections={canInvite ? selectionsToInvite : []}
+        busySelectionId={
+          createMutation.isPending
+            ? (createMutation.variables?.id ?? null)
+            : null
+        }
+        onCreate={(selection) => {
+          setNotice("");
+          setActionError(null);
+          createMutation.mutate(selection);
+        }}
+      />
+
       <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/3">
         {eventsQuery.isPending ? (
           <LoadingTable />
@@ -153,6 +284,23 @@ export default function InvitationsPage() {
                             })
                           : t("dinee.notSent")}
                       </p>
+                      {invitation.status === "pending" &&
+                        !invitation.sent_at && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              prepareMutation.mutate(invitation.id)
+                            }
+                            disabled={prepareMutation.isPending}
+                            className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-brand-500/10 dark:hover:text-brand-400"
+                          >
+                            <DineeSendIcon
+                              className="size-4"
+                              aria-hidden="true"
+                            />
+                            {t("dinee.prepareWhatsApp")}
+                          </button>
+                        )}
                     </div>
                   </div>
                 </article>
@@ -163,15 +311,17 @@ export default function InvitationsPage() {
               <table className="min-w-full">
                 <thead className="border-b border-gray-100 bg-gray-50/80 dark:border-gray-800 dark:bg-gray-900/50">
                   <tr>
-                    {["person", "contact", "status", "sending"].map((key) => (
-                      <th
-                        key={key}
-                        scope="col"
-                        className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase dark:text-gray-400"
-                      >
-                        {t(`dinee.${key}`)}
-                      </th>
-                    ))}
+                    {["person", "contact", "status", "sending", "actions"].map(
+                      (key) => (
+                        <th
+                          key={key}
+                          scope="col"
+                          className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 uppercase dark:text-gray-400"
+                        >
+                          {t(`dinee.${key}`)}
+                        </th>
+                      ),
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -230,6 +380,25 @@ export default function InvitationsPage() {
                             ? formatDate(invitation.sent_at)
                             : t("dinee.notSent")}
                         </td>
+                        <td className="px-5 py-4">
+                          {invitation.status === "pending" &&
+                            !invitation.sent_at && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  prepareMutation.mutate(invitation.id)
+                                }
+                                disabled={prepareMutation.isPending}
+                                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-brand-500/10 dark:hover:text-brand-400"
+                              >
+                                <DineeSendIcon
+                                  className="size-4"
+                                  aria-hidden="true"
+                                />
+                                {t("dinee.prepareWhatsApp")}
+                              </button>
+                            )}
+                        </td>
                       </tr>
                     );
                   })}
@@ -243,6 +412,21 @@ export default function InvitationsPage() {
           </>
         )}
       </section>
+      <InvitationDeliveryModal
+        isOpen={deliveryModal.isOpen}
+        delivery={delivery}
+        isMarkingSent={markSentMutation.isPending}
+        errorMessage={
+          markSentMutation.isError
+            ? t(apiErrorMessageKey(markSentMutation.error))
+            : null
+        }
+        onClose={() => {
+          deliveryModal.closeModal();
+          setDelivery(null);
+        }}
+        onMarkSent={() => markSentMutation.mutate()}
+      />
     </>
   );
 }
