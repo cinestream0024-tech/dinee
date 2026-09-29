@@ -22,6 +22,12 @@ export const profileKeys = {
     [...profileKeys.all, profileId, "history"] as const,
 };
 
+export const memberProfileKey = ["member", "profile"] as const;
+
+export async function getMemberProfile(): Promise<Profile> {
+  return (await api<{ data: Profile }>("/api/v1/member/profile")).data;
+}
+
 export async function listProfiles(
   filters: ProfileFilters,
 ): Promise<PaginatedResponse<Profile>> {

@@ -14,6 +14,9 @@ const EventsPage = lazy(() => import("@/pages/admin/EventsPage"));
 const NetworkPage = lazy(() => import("@/pages/admin/NetworkPage"));
 const InvitationsPage = lazy(() => import("@/pages/admin/InvitationsPage"));
 const InvitationPage = lazy(() => import("@/pages/public/InvitationPage"));
+const MemberProfilePage = lazy(
+  () => import("@/pages/member/MemberProfilePage"),
+);
 
 function RouteFallback() {
   const { t } = useTranslation();
@@ -84,7 +87,11 @@ export default function App() {
             <Route index element={<MemberHomePage />} />
             <Route
               path="profile"
-              element={<MemberHomePage section="myProfile" />}
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <MemberProfilePage />
+                </Suspense>
+              }
             />
             <Route
               path="invitations"
