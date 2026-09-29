@@ -18,6 +18,7 @@ export default function MemberProfileHeader({ profile }: { profile: Profile }) {
           <ProfileAvatar
             firstName={profile.first_name}
             lastName={profile.last_name}
+            photoUrl={profile.photo_url}
             size="lg"
           />
         </div>

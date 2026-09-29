@@ -137,3 +137,56 @@ it("keeps entered values and shows field feedback after a 422 response", async (
     expect((email as HTMLInputElement).value).toBe("adresse-invalide"),
   );
 });
+
+it("uploads and removes a profile photo without sending a JSON content type", async () => {
+  let currentProfile: Profile = { ...initialProfile, photo_url: null };
+  let uploadUsedFormData = false;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, options?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/sanctum/csrf-cookie"))
+        return new Response(null, { status: 204 });
+      if (
+        url.endsWith("/api/v1/member/profile/photo") &&
+        options?.method === "POST"
+      ) {
+        uploadUsedFormData = options.body instanceof FormData;
+        expect(new Headers(options.headers).has("Content-Type")).toBe(false);
+        currentProfile = {
+          ...currentProfile,
+          photo_url: "http://ledinee.test/api/v1/member/profile/photo?v=2",
+        };
+        return Response.json({ data: currentProfile });
+      }
+      if (
+        url.endsWith("/api/v1/member/profile/photo") &&
+        options?.method === "DELETE"
+      ) {
+        currentProfile = { ...currentProfile, photo_url: null };
+        return Response.json({ data: currentProfile });
+      }
+      return Response.json({ data: currentProfile });
+    }),
+  );
+
+  mount("/member/profile/edit");
+  const file = new File(["portrait"], "portrait.png", { type: "image/png" });
+  await userEvent.upload(
+    await screen.findByLabelText("Ajouter une photo"),
+    file,
+  );
+
+  expect(
+    await screen.findByText("Votre photo a été mise à jour."),
+  ).toBeTruthy();
+  expect(screen.getByRole("img", { name: "Patrick Démo" })).toBeTruthy();
+  expect(uploadUsedFormData).toBe(true);
+
+  await userEvent.click(
+    screen.getByRole("button", { name: "Supprimer la photo" }),
+  );
+
+  expect(await screen.findByText("Votre photo a été supprimée.")).toBeTruthy();
+  expect(screen.queryByRole("img", { name: "Patrick Démo" })).toBeNull();
+});

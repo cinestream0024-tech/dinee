@@ -45,6 +45,7 @@ export interface Profile {
   id: number;
   first_name: string;
   last_name: string;
+  photo_url?: string | null;
   email: string | null;
   phone: string | null;
   linkedin_url: string | null;

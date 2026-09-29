@@ -1,14 +1,17 @@
 interface ProfileAvatarProps {
   firstName: string;
   lastName: string;
+  photoUrl?: string | null;
   size?: "sm" | "md" | "lg";
 }
 
 export default function ProfileAvatar({
   firstName,
   lastName,
+  photoUrl,
   size = "md",
 }: ProfileAvatarProps) {
+  const name = `${firstName} ${lastName}`.trim();
   const initials =
     `${firstName.charAt(0)}${lastName.charAt(0)}`.toLocaleUpperCase();
   const sizeClass = {
@@ -16,6 +19,17 @@ export default function ProfileAvatar({
     md: "size-12 rounded-xl text-base",
     lg: "size-24 rounded-full text-title-sm",
   }[size];
+
+  if (photoUrl) {
+    return (
+      <img
+        src={photoUrl}
+        alt={name}
+        referrerPolicy="no-referrer"
+        className={`shrink-0 object-cover ring-1 ring-gray-200 ring-inset dark:ring-gray-700 ${sizeClass}`}
+      />
+    );
+  }
 
   return (
     <span

@@ -1,4 +1,4 @@
-import { api, apiMutation } from "@/services/api";
+import { api, apiMutation, initializeCsrf } from "@/services/api";
 import type {
   Availability,
   PaginatedResponse,
@@ -36,6 +36,28 @@ export async function updateMemberProfile(
       "/api/v1/member/profile",
       "PATCH",
       payload,
+    )
+  ).data;
+}
+
+export async function uploadMemberProfilePhoto(file: File): Promise<Profile> {
+  await initializeCsrf();
+  const body = new FormData();
+  body.append("photo", file);
+
+  return (
+    await api<{ data: Profile }>("/api/v1/member/profile/photo", {
+      method: "POST",
+      body,
+    })
+  ).data;
+}
+
+export async function removeMemberProfilePhoto(): Promise<Profile> {
+  return (
+    await apiMutation<{ data: Profile }>(
+      "/api/v1/member/profile/photo",
+      "DELETE",
     )
   ).data;
 }

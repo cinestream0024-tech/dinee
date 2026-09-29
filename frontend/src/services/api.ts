@@ -23,7 +23,8 @@ export async function api<T>(
 ): Promise<T> {
   const headers = new Headers(options.headers);
   headers.set("Accept", "application/json");
-  if (options.body) headers.set("Content-Type", "application/json");
+  if (options.body && !(options.body instanceof FormData))
+    headers.set("Content-Type", "application/json");
 
   const csrf = document.cookie
     .split("; ")

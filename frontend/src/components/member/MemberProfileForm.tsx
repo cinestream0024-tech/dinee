@@ -10,6 +10,7 @@ import {
 } from "@/components/admin/apiErrors";
 import { controlClass, textAreaClass } from "@/components/admin/formStyles";
 import MemberProfileSection from "@/components/member/MemberProfileSection";
+import MemberProfilePhotoEditor from "@/components/member/MemberProfilePhotoEditor";
 import { memberProfileKey, updateMemberProfile } from "@/features/profiles/api";
 import type { Profile } from "@/types/dinee";
 
@@ -148,6 +149,8 @@ export default function MemberProfileForm({ profile }: { profile: Profile }) {
       {mutation.isError && (
         <MutationError message={t(apiErrorMessageKey(mutation.error))} />
       )}
+
+      <MemberProfilePhotoEditor profile={profile} />
 
       <MemberProfileSection title={t("dinee.essentialInformation")}>
         <div className="grid gap-5 sm:grid-cols-2">

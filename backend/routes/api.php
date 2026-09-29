@@ -23,6 +23,9 @@ Route::prefix('v1')->group(function () {
 
         Route::prefix('member')->middleware('member')->group(function () {
             Route::get('/profile', [MemberProfileController::class, 'show']);
+            Route::get('/profile/photo', [MemberProfileController::class, 'photo']);
+            Route::post('/profile/photo', [MemberProfileController::class, 'updatePhoto']);
+            Route::delete('/profile/photo', [MemberProfileController::class, 'destroyPhoto']);
             Route::patch('/profile', [MemberProfileController::class, 'update']);
         });
 

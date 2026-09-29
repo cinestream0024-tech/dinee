@@ -6,7 +6,9 @@ use App\Enums\ProfileSource;
 use App\Models\Profile;
 use App\Models\User;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class ProfileService
@@ -27,6 +29,48 @@ class ProfileService
         } catch (UniqueConstraintViolationException) {
             throw ValidationException::withMessages(['contact' => ['duplicate_contact']]);
         }
+    }
+
+    public function replacePhoto(Profile $profile, UploadedFile $photo): Profile
+    {
+        $newPath = $photo->store('profile-photos', 'local');
+        abort_unless($newPath, 500);
+
+        try {
+            [$record, $oldPath] = DB::transaction(function () use ($profile, $newPath) {
+                $record = Profile::lockForUpdate()->findOrFail($profile->id);
+                $oldPath = $record->photo_path;
+                $record->forceFill(['photo_path' => $newPath])->save();
+
+                return [$record->refresh(), $oldPath];
+            });
+        } catch (\Throwable $exception) {
+            Storage::disk('local')->delete($newPath);
+            throw $exception;
+        }
+
+        if ($oldPath) {
+            Storage::disk('local')->delete($oldPath);
+        }
+
+        return $record;
+    }
+
+    public function removePhoto(Profile $profile): Profile
+    {
+        [$record, $oldPath] = DB::transaction(function () use ($profile) {
+            $record = Profile::lockForUpdate()->findOrFail($profile->id);
+            $oldPath = $record->photo_path;
+            $record->forceFill(['photo_path' => null])->save();
+
+            return [$record->refresh(), $oldPath];
+        });
+
+        if ($oldPath) {
+            Storage::disk('local')->delete($oldPath);
+        }
+
+        return $record;
     }
 
     public function history(Profile $profile): array
