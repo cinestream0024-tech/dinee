@@ -901,6 +901,7 @@
     "language": "Language",
     "adminNavigation": "Admin navigation",
     "memberNavigation": "Member navigation",
+    "toggleTheme": "Change theme",
     "adminSpace": "Administration",
     "memberSpace": "Member space",
     "adminHome": "Overview",
