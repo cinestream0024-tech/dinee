@@ -59,9 +59,13 @@ function mount(path = "/member") {
 it("provides the three familiar member destinations on mobile and desktop", () => {
   mount("/member/profile");
 
-  expect(
-    screen.getAllByRole("navigation", { name: "Navigation membre" }),
-  ).toHaveLength(2);
+  const navigation = screen.getAllByRole("navigation", {
+    name: "Navigation membre",
+  });
+  expect(navigation).toHaveLength(2);
+  expect(navigation[0].closest("header")).not.toBeNull();
+  expect(navigation[1].closest("header")).toBeNull();
+  expect(navigation[1].className).toContain("bottom-0");
   expect(screen.getAllByRole("link", { name: "Mon espace" })).toHaveLength(2);
   expect(screen.getAllByRole("link", { name: "Mes invitations" })).toHaveLength(
     2,

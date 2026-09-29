@@ -15,7 +15,7 @@ export default function MemberLayout() {
             <span className="shrink-0 text-lg font-semibold tracking-tight text-gray-950 dark:text-white">
               {t("dinee.brand")}
             </span>
-            <MemberNavigation />
+            <MemberNavigation variant="desktop" />
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <ThemeToggleButton />
@@ -27,6 +27,8 @@ export default function MemberLayout() {
       <main className="mx-auto max-w-3xl px-4 pt-6 pb-28 sm:px-6 sm:pt-8 md:pb-10">
         <Outlet />
       </main>
+
+      <MemberNavigation variant="mobile" />
     </div>
   );
 }
