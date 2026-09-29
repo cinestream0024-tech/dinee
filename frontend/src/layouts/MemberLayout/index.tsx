@@ -1,4 +1,4 @@
-import { Outlet } from "react-router";
+import { Outlet, useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ThemeToggleButton } from "@/components/common/ThemeToggleButton";
 import MemberAccountMenu from "@/components/member/MemberAccountMenu";
@@ -6,6 +6,9 @@ import MemberNavigation from "@/components/member/MemberNavigation";
 
 export default function MemberLayout() {
   const { t } = useTranslation();
+  const editingProfile = useLocation().pathname.startsWith(
+    "/member/profile/edit",
+  );
 
   return (
     <div className="min-h-dvh bg-gray-25 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
@@ -15,7 +18,7 @@ export default function MemberLayout() {
             <span className="shrink-0 text-lg font-semibold tracking-tight text-gray-950 dark:text-white">
               {t("dinee.brand")}
             </span>
-            <MemberNavigation variant="desktop" />
+            {!editingProfile && <MemberNavigation variant="desktop" />}
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <ThemeToggleButton />
@@ -24,11 +27,15 @@ export default function MemberLayout() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-4 pt-6 pb-28 sm:px-6 sm:pt-8 md:pb-10">
+      <main
+        className={`mx-auto max-w-3xl px-4 pt-6 sm:px-6 sm:pt-8 ${
+          editingProfile ? "pb-8" : "pb-28 md:pb-10"
+        }`}
+      >
         <Outlet />
       </main>
 
-      <MemberNavigation variant="mobile" />
+      {!editingProfile && <MemberNavigation variant="mobile" />}
     </div>
   );
 }

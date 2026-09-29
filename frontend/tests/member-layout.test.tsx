@@ -43,6 +43,10 @@ function mount(path = "/member") {
                   <Route index element={<div>Accueil membre</div>} />
                   <Route path="profile" element={<div>Profil membre</div>} />
                   <Route
+                    path="profile/edit"
+                    element={<div>Édition profil</div>}
+                  />
+                  <Route
                     path="invitations"
                     element={<div>Invitations membre</div>}
                   />
@@ -88,4 +92,12 @@ it("keeps the light and dark mode control accessible", async () => {
     expect(document.documentElement.classList.contains("dark")).toBe(true),
   );
   expect(localStorage.getItem("theme")).toBe("dark");
+});
+it("removes member navigation while editing the profile", () => {
+  mount("/member/profile/edit");
+
+  expect(screen.getByText("Édition profil")).toBeTruthy();
+  expect(
+    screen.queryByRole("navigation", { name: "Navigation membre" }),
+  ).toBeNull();
 });

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "react-router";
 import MemberProfileHeader from "@/components/member/MemberProfileHeader";
 import MemberProfileSection from "@/components/member/MemberProfileSection";
 import PageMeta from "@/components/common/PageMeta";
@@ -53,6 +54,10 @@ function ProfileSkeleton() {
 
 export default function MemberProfilePage() {
   const { t } = useTranslation();
+  const location = useLocation();
+  const profileUpdated = Boolean(
+    (location.state as { profileUpdated?: boolean } | null)?.profileUpdated,
+  );
   const profileQuery = useQuery({
     queryKey: memberProfileKey,
     queryFn: getMemberProfile,
@@ -66,6 +71,15 @@ export default function MemberProfilePage() {
         title={`${t("dinee.myProfile")} | ${t("dinee.brand")}`}
         description={t("dinee.memberProfileSubtitle")}
       />
+
+      {profileUpdated && (
+        <div
+          role="status"
+          className="mb-5 rounded-xl border border-success-200 bg-success-50 px-4 py-3 text-sm font-medium text-success-700 dark:border-success-500/30 dark:bg-success-500/15 dark:text-success-300"
+        >
+          {t("dinee.memberProfileSaved")}
+        </div>
+      )}
 
       {profileQuery.isPending && <ProfileSkeleton />}
 

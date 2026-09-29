@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router";
 import { AppWrapper } from "../src/components/common/PageMeta";
 import { LanguageProvider } from "../src/context/LanguageContext";
 import { ThemeProvider } from "../src/context/ThemeContext";
@@ -47,7 +48,9 @@ function mount() {
       <ThemeProvider>
         <LanguageProvider>
           <AppWrapper>
-            <MemberProfilePage />
+            <MemoryRouter>
+              <MemberProfilePage />
+            </MemoryRouter>
           </AppWrapper>
         </LanguageProvider>
       </ThemeProvider>

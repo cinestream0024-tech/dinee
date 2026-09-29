@@ -28,6 +28,18 @@ export async function getMemberProfile(): Promise<Profile> {
   return (await api<{ data: Profile }>("/api/v1/member/profile")).data;
 }
 
+export async function updateMemberProfile(
+  payload: Omit<ProfilePayload, "availability">,
+): Promise<Profile> {
+  return (
+    await apiMutation<{ data: Profile }>(
+      "/api/v1/member/profile",
+      "PATCH",
+      payload,
+    )
+  ).data;
+}
+
 export async function listProfiles(
   filters: ProfileFilters,
 ): Promise<PaginatedResponse<Profile>> {

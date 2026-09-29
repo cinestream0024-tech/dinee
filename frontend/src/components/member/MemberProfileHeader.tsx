@@ -1,6 +1,7 @@
+import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import ProfileAvatar from "@/components/profiles/ProfileAvatar";
-import { DineeCompanyIcon } from "@/icons";
+import { DineeCompanyIcon, DineeEditIcon } from "@/icons";
 import type { Profile } from "@/types/dinee";
 
 export default function MemberProfileHeader({ profile }: { profile: Profile }) {
@@ -40,9 +41,18 @@ export default function MemberProfileHeader({ profile }: { profile: Profile }) {
               </p>
             )}
           </div>
-          <span className="w-fit rounded-full bg-gray-100 px-3 py-1.5 text-theme-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-            {t(`dinee.availability_${profile.availability}`)}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="w-fit rounded-full bg-gray-100 px-3 py-1.5 text-theme-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+              {t(`dinee.availability_${profile.availability}`)}
+            </span>
+            <Link
+              to="/member/profile/edit"
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-brand-500 px-4 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
+            >
+              <DineeEditIcon aria-hidden="true" className="size-4" />
+              {t("dinee.editProfile")}
+            </Link>
+          </div>
         </div>
       </div>
     </header>

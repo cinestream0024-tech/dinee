@@ -142,6 +142,7 @@
   },
   "userDropdown": {
     "editProfile": "Edit profile",
+
     "accountSettings": "Account settings",
     "support": "Support",
     "language": "Language",
@@ -1062,6 +1063,10 @@
     "networkSubtitle": "Centralize professional profiles and their history with DINEE.",
     "newProfile": "New profile",
     "editProfile": "Edit profile",
+    "memberProfileEditSubtitle": "Update the essential details of your professional profile.",
+    "essentialInformation": "Essential information",
+    "backToProfile": "Back to my profile",
+    "memberProfileSaved": "Your profile has been updated.",
     "profileFormDescription": "Add the information needed to know and contact this person.",
     "firstName": "First name",
     "lastName": "Last name",
