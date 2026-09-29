@@ -23,11 +23,11 @@ class MemberProfilePhotoApiTest extends TestCase
             'photo' => UploadedFile::fake()->image('portrait.jpg', 400, 400)->size(500),
         ], ['Accept' => 'application/json']);
 
+        $path = $profile->fresh()->photo_path;
         $response->assertOk()
             ->assertJsonPath('data.id', $profile->id)
-            ->assertJsonPath('data.photo_url', url('/api/v1/member/profile/photo').'?v='.$profile->fresh()->updated_at->timestamp);
+            ->assertJsonPath('data.photo_url', url('/api/v1/member/profile/photo').'?v='.substr(hash('sha256', $path), 0, 16));
 
-        $path = $profile->fresh()->photo_path;
         $this->assertNotNull($path);
         Storage::disk('local')->assertExists($path);
 
@@ -45,11 +45,19 @@ class MemberProfilePhotoApiTest extends TestCase
         Storage::disk('local')->put('profile-photos/old.jpg', 'old');
         $profile->forceFill(['photo_path' => 'profile-photos/old.jpg'])->save();
 
-        $this->actingAs($member)->post('/api/v1/member/profile/photo', [
+        $response = $this->actingAs($member)->post('/api/v1/member/profile/photo', [
             'photo' => UploadedFile::fake()->image('replacement.png', 300, 300)->size(400),
         ], ['Accept' => 'application/json'])->assertOk();
 
         $newPath = $profile->fresh()->photo_path;
+        $response->assertJsonPath(
+            'data.photo_url',
+            url('/api/v1/member/profile/photo').'?v='.substr(hash('sha256', $newPath), 0, 16),
+        );
+        $this->assertNotSame(
+            substr(hash('sha256', 'profile-photos/old.jpg'), 0, 16),
+            substr(hash('sha256', $newPath), 0, 16),
+        );
         Storage::disk('local')->assertMissing('profile-photos/old.jpg');
         Storage::disk('local')->assertExists($newPath);
 

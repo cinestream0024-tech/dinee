@@ -45,6 +45,19 @@ const fromProfile = (profile: Profile): FormState => ({
 });
 
 const nullable = (value: string) => value.trim() || null;
+const isLinkedInProfile = (value: string) => {
+  if (!value.trim()) return true;
+  try {
+    const url = new URL(value);
+    return (
+      ["linkedin.com", "www.linkedin.com"].includes(
+        url.hostname.toLowerCase(),
+      ) && /^\/in\/[A-Za-z0-9_%.-]+\/?$/.test(url.pathname)
+    );
+  } catch {
+    return false;
+  }
+};
 
 export default function MemberProfileForm({ profile }: { profile: Profile }) {
   const { t } = useTranslation();
@@ -76,7 +89,11 @@ export default function MemberProfileForm({ profile }: { profile: Profile }) {
   const fieldError = (field: keyof FormState) =>
     clientErrors[field] ||
     (hasFieldError(mutation.error, field)
-      ? t("dinee.invalidField")
+      ? t(
+          field === "linkedin_url"
+            ? "dinee.linkedinProfileError"
+            : "dinee.invalidField",
+        )
       : undefined);
 
   const input = (
@@ -120,6 +137,8 @@ export default function MemberProfileForm({ profile }: { profile: Profile }) {
     const errors: Record<string, string> = {};
     if (!form.first_name.trim()) errors.first_name = t("dinee.requiredField");
     if (!form.last_name.trim()) errors.last_name = t("dinee.requiredField");
+    if (!isLinkedInProfile(form.linkedin_url))
+      errors.linkedin_url = t("dinee.linkedinProfileError");
     if (Object.keys(errors).length) {
       setClientErrors(errors);
       document
@@ -256,6 +275,7 @@ export default function MemberProfileForm({ profile }: { profile: Profile }) {
           <FormField
             id="member-profile-linkedin_url"
             label={t("dinee.linkedin")}
+            hint={t("dinee.linkedinProfileHint")}
             error={fieldError("linkedin_url")}
             className="sm:col-span-2"
           >

@@ -187,6 +187,38 @@ it("uploads and removes a profile photo without sending a JSON content type", as
     screen.getByRole("button", { name: "Supprimer la photo" }),
   );
 
+  expect(screen.getByText("Supprimer cette photo ?")).toBeTruthy();
+  expect(screen.getByRole("img", { name: "Patrick Démo" })).toBeTruthy();
+  await userEvent.click(
+    screen.getByRole("button", { name: "Confirmer la suppression" }),
+  );
   expect(await screen.findByText("Votre photo a été supprimée.")).toBeTruthy();
   expect(screen.queryByRole("img", { name: "Patrick Démo" })).toBeNull();
+});
+
+it("explains the expected LinkedIn profile URL before submitting", async () => {
+  const fetchMock = vi.fn(
+    async (input: RequestInfo | URL, options?: RequestInit) => {
+      void options;
+      if (String(input).endsWith("/api/v1/member/profile"))
+        return Response.json({ data: initialProfile });
+      return new Response(null, { status: 204 });
+    },
+  );
+  vi.stubGlobal("fetch", fetchMock);
+
+  mount("/member/profile/edit");
+  const linkedin = await screen.findByLabelText("Profil LinkedIn");
+  await userEvent.clear(linkedin);
+  await userEvent.type(linkedin, "http://ledinee.test/member/profile/edit");
+  await userEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+
+  expect(
+    screen.getByText(
+      "Saisissez un lien de profil LinkedIn, par exemple https://www.linkedin.com/in/votre-profil.",
+    ),
+  ).toBeTruthy();
+  expect(
+    fetchMock.mock.calls.some(([, options]) => options?.method === "PATCH"),
+  ).toBe(false);
 });
