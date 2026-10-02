@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 interface ProfileAvatarProps {
   firstName: string;
   lastName: string;
@@ -11,6 +13,40 @@ export default function ProfileAvatar({
   photoUrl,
   size = "md",
 }: ProfileAvatarProps) {
+  const [loadedPhoto, setLoadedPhoto] = useState<{
+    source: string;
+    objectUrl: string;
+  } | null>(null);
+  const usesLocalPreview = Boolean(
+    photoUrl?.startsWith("blob:") || photoUrl?.startsWith("data:"),
+  );
+  useEffect(() => {
+    if (!photoUrl || usesLocalPreview) return;
+
+    const controller = new AbortController();
+    let objectUrl: string | null = null;
+    void fetch(photoUrl, {
+      cache: "no-store",
+      credentials: "include",
+      headers: { Accept: "image/*" },
+      signal: controller.signal,
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error(`Profile photo ${response.status}`);
+        return response.blob();
+      })
+      .then((blob) => {
+        objectUrl = URL.createObjectURL(blob);
+        setLoadedPhoto({ source: photoUrl, objectUrl });
+      })
+      .catch(() => undefined);
+
+    return () => {
+      controller.abort();
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [photoUrl, usesLocalPreview]);
+
   const name = `${firstName} ${lastName}`.trim();
   const initials =
     `${firstName.charAt(0)}${lastName.charAt(0)}`.toLocaleUpperCase();
@@ -20,11 +56,17 @@ export default function ProfileAvatar({
     lg: "size-24 rounded-full text-title-sm",
   }[size];
 
-  if (photoUrl) {
+  const displayedPhoto = usesLocalPreview
+    ? photoUrl
+    : loadedPhoto && loadedPhoto.source === photoUrl
+      ? loadedPhoto.objectUrl
+      : null;
+
+  if (displayedPhoto) {
     return (
       <img
-        key={photoUrl}
-        src={photoUrl}
+        key={displayedPhoto}
+        src={displayedPhoto}
         alt={name}
         referrerPolicy="no-referrer"
         className={`shrink-0 object-cover ring-1 ring-gray-200 ring-inset dark:ring-gray-700 ${sizeClass}`}
