@@ -8,6 +8,7 @@ use App\Models\Event;
 use App\Models\EventSelection;
 use App\Models\Invitation;
 use App\Models\InvitationFollowUp;
+use App\Models\Profile;
 use App\Models\User;
 use App\Support\InvitationToken;
 use Illuminate\Support\Facades\DB;
@@ -71,6 +72,40 @@ class InvitationService
                 return $invitation->load('selection.event');
             }
 
+            $invitation->forceFill([
+                'status' => $status,
+                'future_interest' => $normalizedInterest,
+                'responded_at' => now(),
+            ])->save();
+
+            return $invitation->load('selection.event');
+        });
+    }
+
+    public function respondForMember(
+        Invitation $invitation,
+        Profile $profile,
+        InvitationStatus $status,
+        ?bool $futureInterest,
+    ): Invitation {
+        if (! in_array($status, [InvitationStatus::Accepted, InvitationStatus::Declined], true)) {
+            throw new \InvalidArgumentException('Unsupported invitation response.');
+        }
+
+        return DB::transaction(function () use ($invitation, $profile, $status, $futureInterest) {
+            [$event, $selection, $invitation] = $this->lockContext($invitation);
+            if (
+                $selection->profile_id !== $profile->id
+                || ! $invitation->sent_at
+                || $invitation->status === InvitationStatus::Cancelled
+                || $selection->withdrawn_at
+                || $event->status !== EventStatus::Upcoming
+                || ! $event->starts_at?->isFuture()
+            ) {
+                abort(404);
+            }
+
+            $normalizedInterest = $status === InvitationStatus::Declined ? $futureInterest : null;
             $invitation->forceFill([
                 'status' => $status,
                 'future_interest' => $normalizedInterest,

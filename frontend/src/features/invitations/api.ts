@@ -3,6 +3,7 @@ import type {
   AdminInvitation,
   InvitationMutationResult,
   InvitationStatus,
+  MemberInvitation,
   PaginatedResponse,
   PublicInvitation,
   PublicInvitationResponsePayload,
@@ -23,7 +24,24 @@ export const invitationKeys = {
   list: (eventId: number, filters: InvitationFilters) =>
     [...invitationKeys.admin(eventId), "list", filters] as const,
   public: (token: string) => [...invitationKeys.all, "public", token] as const,
+  member: () => [...invitationKeys.all, "member"] as const,
 };
+
+export async function listMemberInvitations(): Promise<MemberInvitation[]> {
+  return (await api<{ data: MemberInvitation[] }>("/api/v1/member/invitations"))
+    .data;
+}
+
+export function respondToMemberInvitation(
+  invitationId: number,
+  payload: PublicInvitationResponsePayload,
+): Promise<{ data: MemberInvitation }> {
+  return apiMutation(
+    `/api/v1/member/invitations/${invitationId}/response`,
+    "POST",
+    payload,
+  );
+}
 
 export function listInvitations(
   eventId: number,

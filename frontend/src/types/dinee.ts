@@ -150,3 +150,20 @@ export interface PublicInvitationResponsePayload {
   response: "accepted" | "declined";
   future_interest?: boolean;
 }
+
+export interface MemberInvitation {
+  id: number;
+  status: InvitationStatus;
+  future_interest: boolean | null;
+  responded_at: string | null;
+  can_respond: boolean;
+  event: {
+    id: number;
+    title: string;
+    starts_at: string | null;
+    timezone: string;
+    location: string | null;
+    description: string | null;
+    status: EventStatus;
+  };
+}

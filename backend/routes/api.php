@@ -4,6 +4,7 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\FoundationController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\MemberProfileController;
+use App\Http\Controllers\MemberInvitationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfileImportController;
 use App\Http\Controllers\PublicInvitationController;
@@ -22,6 +23,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/auth/user', [SessionController::class, 'show']);
 
         Route::prefix('member')->middleware('member')->group(function () {
+            Route::get('/invitations', [MemberInvitationController::class, 'index']);
+            Route::post('/invitations/{invitation}/response', [MemberInvitationController::class, 'respond']);
             Route::get('/profile', [MemberProfileController::class, 'show']);
             Route::get('/history', [MemberProfileController::class, 'history']);
             Route::get('/profile/photo', [MemberProfileController::class, 'photo']);
