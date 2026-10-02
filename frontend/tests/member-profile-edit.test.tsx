@@ -163,7 +163,7 @@ it("uploads and removes a profile photo without sending a JSON content type", as
         expect(new Headers(options.headers).has("Content-Type")).toBe(false);
         currentProfile = {
           ...currentProfile,
-          photo_url: "http://ledinee.test/api/v1/member/profile/photo?v=2",
+          photo_url: "/api/v1/member/profile/photo/0123456789abcdef",
         };
         return Response.json({ data: currentProfile });
       }
@@ -192,7 +192,9 @@ it("uploads and removes a profile photo without sending a JSON content type", as
   expect(
     await screen.findByText("Votre photo a été mise à jour."),
   ).toBeTruthy();
-  expect(screen.getByRole("img", { name: "Patrick Démo" })).toBeTruthy();
+  expect(
+    screen.getByRole("img", { name: "Patrick Démo" }).getAttribute("referrerpolicy"),
+  ).toBe("origin");
   expect(uploadUsedFormData).toBe(true);
 
   await userEvent.click(

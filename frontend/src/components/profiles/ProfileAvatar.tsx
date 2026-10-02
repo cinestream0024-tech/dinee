@@ -26,7 +26,7 @@ export default function ProfileAvatar({
         key={photoUrl}
         src={photoUrl}
         alt={name}
-        referrerPolicy="no-referrer"
+        referrerPolicy="origin"
         className={`shrink-0 object-cover ring-1 ring-gray-200 ring-inset dark:ring-gray-700 ${sizeClass}`}
       />
     );

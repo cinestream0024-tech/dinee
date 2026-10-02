@@ -26,8 +26,8 @@ class MemberProfilePhotoApiTest extends TestCase
         $path = $profile->fresh()->photo_path;
         $response->assertOk()
             ->assertJsonPath('data.id', $profile->id);
-        $this->assertMatchesRegularExpression(
-            '#^/api/v1/member/profile/photo/'.substr(hash('sha256', $path), 0, 16).'\?fresh=[a-f0-9]{16}$#',
+        $this->assertSame(
+            '/api/v1/member/profile/photo/'.substr(hash('sha256', $path), 0, 16),
             $response->json('data.photo_url'),
         );
 
@@ -57,8 +57,8 @@ class MemberProfilePhotoApiTest extends TestCase
         ], ['Accept' => 'application/json'])->assertOk();
 
         $newPath = $profile->fresh()->photo_path;
-        $this->assertMatchesRegularExpression(
-            '#^/api/v1/member/profile/photo/'.substr(hash('sha256', $newPath), 0, 16).'\?fresh=[a-f0-9]{16}$#',
+        $this->assertSame(
+            '/api/v1/member/profile/photo/'.substr(hash('sha256', $newPath), 0, 16),
             $response->json('data.photo_url'),
         );
         $this->assertNotSame(
@@ -101,6 +101,9 @@ class MemberProfilePhotoApiTest extends TestCase
         $photo = fn () => UploadedFile::fake()->image('portrait.jpg', 200, 200);
 
         $this->post('/api/v1/member/profile/photo', ['photo' => $photo()], ['Accept' => 'application/json'])
+            ->assertUnauthorized();
+
+        $this->get('/api/v1/member/profile/photo/0123456789abcdef', ['Accept' => 'image/*'])
             ->assertUnauthorized();
 
         $this->actingAs(User::factory()->admin()->create())
