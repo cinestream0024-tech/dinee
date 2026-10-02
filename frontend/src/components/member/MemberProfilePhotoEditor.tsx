@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { apiErrorMessageKey } from "@/components/admin/apiErrors";
@@ -24,11 +24,23 @@ export default function MemberProfilePhotoEditor({
   const [clientError, setClientError] = useState("");
   const [notice, setNotice] = useState("");
   const [confirmingRemoval, setConfirmingRemoval] = useState(false);
+  const [pendingPhoto, setPendingPhoto] = useState<{
+    file: File;
+    previewUrl: string;
+  } | null>(null);
+  useEffect(
+    () => () => {
+      if (pendingPhoto) URL.revokeObjectURL(pendingPhoto.previewUrl);
+    },
+    [pendingPhoto],
+  );
+  const clearPendingPhoto = () => setPendingPhoto(null);
   const upload = useMutation({
     mutationFn: uploadMemberProfilePhoto,
     onSuccess: async (updatedProfile) => {
       client.setQueryData(memberProfileKey, updatedProfile);
       await client.invalidateQueries({ queryKey: memberProfileKey });
+      clearPendingPhoto();
       setNotice(t("dinee.photoUpdated"));
     },
   });
@@ -61,7 +73,7 @@ export default function MemberProfilePhotoEditor({
       return;
     }
 
-    upload.mutate(file);
+    setPendingPhoto({ file, previewUrl: URL.createObjectURL(file) });
   };
 
   return (
@@ -70,7 +82,7 @@ export default function MemberProfilePhotoEditor({
         <ProfileAvatar
           firstName={profile.first_name}
           lastName={profile.last_name}
-          photoUrl={profile.photo_url}
+          photoUrl={pendingPhoto?.previewUrl ?? profile.photo_url}
           size="lg"
         />
         <div className="min-w-0 flex-1">
@@ -104,7 +116,29 @@ export default function MemberProfilePhotoEditor({
                 ? t("dinee.uploadingPhoto")
                 : t(profile.photo_url ? "dinee.changePhoto" : "dinee.addPhoto")}
             </button>
-            {profile.photo_url && (
+            {pendingPhoto && (
+              <>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => upload.mutate(pendingPhoto.file)}
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-success-600 px-4 text-sm font-medium text-white hover:bg-success-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-success-500 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {upload.isPending
+                    ? t("dinee.uploadingPhoto")
+                    : t("dinee.confirmPhoto")}
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={clearPendingPhoto}
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
+                >
+                  {t("dinee.cancel")}
+                </button>
+              </>
+            )}
+            {profile.photo_url && !pendingPhoto && (
               <button
                 type="button"
                 disabled={busy}

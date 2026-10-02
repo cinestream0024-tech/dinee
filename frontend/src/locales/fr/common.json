@@ -209,6 +209,7 @@
     "profilePhotoHint": "JPEG, PNG ou WebP, 5 Mo maximum.",
     "addPhoto": "Ajouter une photo",
     "changePhoto": "Changer la photo",
+    "confirmPhoto": "Utiliser cette photo",
     "removePhoto": "Supprimer la photo",
     "confirmPhotoRemoval": "Supprimer cette photo ?",
     "confirmPhotoRemovalDescription": "Cette action retirera immédiatement votre photo de profil.",

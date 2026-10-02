@@ -1088,6 +1088,7 @@
     "profilePhotoHint": "JPEG, PNG or WebP, up to 5 MB.",
     "addPhoto": "Add a photo",
     "changePhoto": "Change photo",
+    "confirmPhoto": "Use this photo",
     "removePhoto": "Remove photo",
     "confirmPhotoRemoval": "Remove this photo?",
     "confirmPhotoRemovalDescription": "This action will immediately remove your profile photo.",

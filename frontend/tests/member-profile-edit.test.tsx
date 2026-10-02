@@ -141,6 +141,14 @@ it("keeps entered values and shows field feedback after a 422 response", async (
 it("uploads and removes a profile photo without sending a JSON content type", async () => {
   let currentProfile: Profile = { ...initialProfile, photo_url: null };
   let uploadUsedFormData = false;
+  Object.defineProperty(URL, "createObjectURL", {
+    configurable: true,
+    value: vi.fn(() => "blob:profile-preview"),
+  });
+  Object.defineProperty(URL, "revokeObjectURL", {
+    configurable: true,
+    value: vi.fn(),
+  });
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL, options?: RequestInit) => {
@@ -175,6 +183,10 @@ it("uploads and removes a profile photo without sending a JSON content type", as
   await userEvent.upload(
     await screen.findByLabelText("Ajouter une photo"),
     file,
+  );
+  expect(uploadUsedFormData).toBe(false);
+  await userEvent.click(
+    screen.getByRole("button", { name: "Utiliser cette photo" }),
   );
 
   expect(
