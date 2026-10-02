@@ -23,6 +23,7 @@ export default function ProfileAvatar({
   if (photoUrl) {
     return (
       <img
+        key={photoUrl}
         src={photoUrl}
         alt={name}
         referrerPolicy="no-referrer"

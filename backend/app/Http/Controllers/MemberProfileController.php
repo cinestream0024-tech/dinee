@@ -39,11 +39,12 @@ class MemberProfileController extends Controller
         return new ProfileResource($service->save($request->validated(), $request->user(), $profile));
     }
 
-    public function photo(Request $request): StreamedResponse
+    public function photo(Request $request, string $version): StreamedResponse
     {
         $profile = $this->profile($request);
         Gate::authorize('view', $profile);
         abort_unless($profile->photo_path && Storage::disk('local')->exists($profile->photo_path), 404);
+        abort_unless(hash_equals(substr(hash('sha256', $profile->photo_path), 0, 16), $version), 404);
 
         return Storage::disk('local')->response($profile->photo_path, null, [
             'Content-Disposition' => 'inline',

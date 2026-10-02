@@ -3,8 +3,8 @@
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\FoundationController;
 use App\Http\Controllers\InvitationController;
-use App\Http\Controllers\MemberProfileController;
 use App\Http\Controllers\MemberInvitationController;
+use App\Http\Controllers\MemberProfileController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfileImportController;
 use App\Http\Controllers\PublicInvitationController;
@@ -27,7 +27,8 @@ Route::prefix('v1')->group(function () {
             Route::post('/invitations/{invitation}/response', [MemberInvitationController::class, 'respond']);
             Route::get('/profile', [MemberProfileController::class, 'show']);
             Route::get('/history', [MemberProfileController::class, 'history']);
-            Route::get('/profile/photo', [MemberProfileController::class, 'photo']);
+            Route::get('/profile/photo/{version}', [MemberProfileController::class, 'photo'])
+                ->where('version', '[a-f0-9]{16}');
             Route::post('/profile/photo', [MemberProfileController::class, 'updatePhoto']);
             Route::delete('/profile/photo', [MemberProfileController::class, 'destroyPhoto']);
             Route::patch('/profile', [MemberProfileController::class, 'update']);

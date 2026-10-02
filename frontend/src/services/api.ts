@@ -35,6 +35,7 @@ export async function api<T>(
   try {
     response = await fetch(`${baseUrl}${path}`, {
       ...options,
+      cache: "no-store",
       headers,
       credentials: "include",
       referrer: `${window.location.origin}/`,

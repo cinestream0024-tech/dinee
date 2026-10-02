@@ -26,15 +26,17 @@ export default function MemberProfilePhotoEditor({
   const [confirmingRemoval, setConfirmingRemoval] = useState(false);
   const upload = useMutation({
     mutationFn: uploadMemberProfilePhoto,
-    onSuccess: (updatedProfile) => {
+    onSuccess: async (updatedProfile) => {
       client.setQueryData(memberProfileKey, updatedProfile);
+      await client.invalidateQueries({ queryKey: memberProfileKey });
       setNotice(t("dinee.photoUpdated"));
     },
   });
   const remove = useMutation({
     mutationFn: removeMemberProfilePhoto,
-    onSuccess: (updatedProfile) => {
+    onSuccess: async (updatedProfile) => {
       client.setQueryData(memberProfileKey, updatedProfile);
+      await client.invalidateQueries({ queryKey: memberProfileKey });
       setNotice(t("dinee.photoRemoved"));
       setConfirmingRemoval(false);
     },

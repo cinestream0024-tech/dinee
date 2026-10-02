@@ -26,19 +26,19 @@ class MemberProfilePhotoApiTest extends TestCase
         $path = $profile->fresh()->photo_path;
         $response->assertOk()
             ->assertJsonPath('data.id', $profile->id)
-            ->assertJsonPath('data.photo_url', url('/api/v1/member/profile/photo').'?v='.substr(hash('sha256', $path), 0, 16));
+            ->assertJsonPath('data.photo_url', url('/api/v1/member/profile/photo/'.substr(hash('sha256', $path), 0, 16)));
 
         $this->assertNotNull($path);
         Storage::disk('local')->assertExists($path);
 
-        $this->get('/api/v1/member/profile/photo')
+        $this->get('/api/v1/member/profile/photo/'.substr(hash('sha256', $path), 0, 16))
             ->assertOk()
             ->assertHeader('Cache-Control', 'no-store, private')
             ->assertHeader('X-Content-Type-Options', 'nosniff');
 
         $otherMember = User::factory()->create();
         Profile::factory()->create(['user_id' => $otherMember->id]);
-        $this->actingAs($otherMember)->get('/api/v1/member/profile/photo')->assertNotFound();
+        $this->actingAs($otherMember)->get('/api/v1/member/profile/photo/'.substr(hash('sha256', $path), 0, 16))->assertNotFound();
     }
 
     public function test_replacing_then_removing_a_photo_cleans_stored_files(): void
@@ -56,7 +56,7 @@ class MemberProfilePhotoApiTest extends TestCase
         $newPath = $profile->fresh()->photo_path;
         $response->assertJsonPath(
             'data.photo_url',
-            url('/api/v1/member/profile/photo').'?v='.substr(hash('sha256', $newPath), 0, 16),
+            url('/api/v1/member/profile/photo/'.substr(hash('sha256', $newPath), 0, 16)),
         );
         $this->assertNotSame(
             substr(hash('sha256', 'profile-photos/old.jpg'), 0, 16),
@@ -64,6 +64,8 @@ class MemberProfilePhotoApiTest extends TestCase
         );
         Storage::disk('local')->assertMissing('profile-photos/old.jpg');
         Storage::disk('local')->assertExists($newPath);
+        $this->get('/api/v1/member/profile/photo/'.substr(hash('sha256', 'profile-photos/old.jpg'), 0, 16))
+            ->assertNotFound();
 
         $this->deleteJson('/api/v1/member/profile/photo')
             ->assertOk()
@@ -71,7 +73,7 @@ class MemberProfilePhotoApiTest extends TestCase
 
         $this->assertNull($profile->fresh()->photo_path);
         Storage::disk('local')->assertMissing($newPath);
-        $this->get('/api/v1/member/profile/photo')->assertNotFound();
+        $this->get('/api/v1/member/profile/photo/'.substr(hash('sha256', $newPath), 0, 16))->assertNotFound();
     }
 
     public function test_profile_photo_rejects_unsafe_formats_without_writing(): void
