@@ -25,8 +25,11 @@ class MemberProfilePhotoApiTest extends TestCase
 
         $path = $profile->fresh()->photo_path;
         $response->assertOk()
-            ->assertJsonPath('data.id', $profile->id)
-            ->assertJsonPath('data.photo_url', '/api/v1/member/profile/photo/'.substr(hash('sha256', $path), 0, 16));
+            ->assertJsonPath('data.id', $profile->id);
+        $this->assertMatchesRegularExpression(
+            '#^/api/v1/member/profile/photo/'.substr(hash('sha256', $path), 0, 16).'\?fresh=[a-f0-9]{16}$#',
+            $response->json('data.photo_url'),
+        );
 
         $this->assertNotNull($path);
         Storage::disk('local')->assertExists($path);
@@ -54,9 +57,9 @@ class MemberProfilePhotoApiTest extends TestCase
         ], ['Accept' => 'application/json'])->assertOk();
 
         $newPath = $profile->fresh()->photo_path;
-        $response->assertJsonPath(
-            'data.photo_url',
-            '/api/v1/member/profile/photo/'.substr(hash('sha256', $newPath), 0, 16),
+        $this->assertMatchesRegularExpression(
+            '#^/api/v1/member/profile/photo/'.substr(hash('sha256', $newPath), 0, 16).'\?fresh=[a-f0-9]{16}$#',
+            $response->json('data.photo_url'),
         );
         $this->assertNotSame(
             substr(hash('sha256', 'profile-photos/old.jpg'), 0, 16),

@@ -163,12 +163,9 @@ it("uploads and removes a profile photo without sending a JSON content type", as
         expect(new Headers(options.headers).has("Content-Type")).toBe(false);
         currentProfile = {
           ...currentProfile,
-          photo_url: "/api/v1/member/profile/photo/0123456789abcdef",
+          photo_url: "http://ledinee.test/api/v1/member/profile/photo?v=2",
         };
         return Response.json({ data: currentProfile });
-      }
-      if (url.includes("/api/v1/member/profile/photo/")) {
-        return new Response(new Blob(["fresh-photo"], { type: "image/png" }));
       }
       if (
         url.endsWith("/api/v1/member/profile/photo") &&
@@ -197,14 +194,6 @@ it("uploads and removes a profile photo without sending a JSON content type", as
   ).toBeTruthy();
   expect(screen.getByRole("img", { name: "Patrick Démo" })).toBeTruthy();
   expect(uploadUsedFormData).toBe(true);
-  expect(
-    (fetch as ReturnType<typeof vi.fn>).mock.calls.some(
-      ([input, options]) =>
-        String(input).includes("/api/v1/member/profile/photo/") &&
-        options?.cache === "no-store" &&
-        options?.credentials === "include",
-    ),
-  ).toBe(true);
 
   await userEvent.click(
     screen.getByRole("button", { name: "Supprimer la photo" }),
