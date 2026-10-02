@@ -35,6 +35,10 @@ class MemberProfilePhotoApiTest extends TestCase
             ->assertOk()
             ->assertHeader('Cache-Control', 'no-store, private')
             ->assertHeader('X-Content-Type-Options', 'nosniff');
+
+        $otherMember = User::factory()->create();
+        Profile::factory()->create(['user_id' => $otherMember->id]);
+        $this->actingAs($otherMember)->get('/api/v1/member/profile/photo')->assertNotFound();
     }
 
     public function test_replacing_then_removing_a_photo_cleans_stored_files(): void

@@ -88,6 +88,8 @@ export interface ProfileHistoryEntry {
   event_id: number;
   event_title: string;
   starts_at: string | null;
+  timezone: string;
+  location: string | null;
   event_status: EventStatus;
   status:
     | "selected"
@@ -98,6 +100,8 @@ export interface ProfileHistoryEntry {
     | "cancelled"
     | "present"
     | "absent";
+  invitation_status: InvitationStatus | null;
+  attendance_status: "present" | "absent" | null;
   selected_at: string;
 }
 export type InvitationStatus =

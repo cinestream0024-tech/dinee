@@ -1,6 +1,10 @@
 import { NavLink } from "react-router";
 import { useTranslation } from "react-i18next";
-import { DineeCalendarIcon, DineeDashboardIcon, UserCircleIcon } from "@/icons";
+import {
+  DineeCalendarIcon,
+  DineeDashboardIcon,
+  UserCircleIcon,
+} from "@/icons";
 
 const items = [
   { to: "/member", key: "memberHome", icon: DineeDashboardIcon, end: true },

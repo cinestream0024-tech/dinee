@@ -20,6 +20,9 @@ const MemberProfilePage = lazy(
 const MemberProfileEditPage = lazy(
   () => import("@/pages/member/MemberProfileEditPage"),
 );
+const MemberHistoryPage = lazy(
+  () => import("@/pages/member/MemberHistoryPage"),
+);
 
 function RouteFallback() {
   const { t } = useTranslation();
@@ -107,6 +110,14 @@ export default function App() {
             <Route
               path="invitations"
               element={<MemberHomePage section="myInvitations" />}
+            />
+            <Route
+              path="history"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <MemberHistoryPage />
+                </Suspense>
+              }
             />
           </Route>
         </Route>

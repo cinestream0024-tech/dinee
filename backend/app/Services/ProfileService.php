@@ -79,8 +79,12 @@ class ProfileService
             ->sortByDesc(fn ($selection) => $selection->event->starts_at)->values()->map(fn ($selection) => [
                 'event_id' => $selection->event_id, 'event_title' => $selection->event->title,
                 'starts_at' => $selection->event->starts_at?->toISOString(),
+                'timezone' => $selection->event->timezone,
+                'location' => $selection->event->location,
                 'event_status' => $selection->event->status->value,
                 'status' => $selection->withdrawn_at ? 'withdrawn' : ($selection->attendance?->status->value ?? $selection->invitation?->status->value ?? 'selected'),
+                'invitation_status' => $selection->invitation?->status->value,
+                'attendance_status' => $selection->attendance?->status->value,
                 'selected_at' => $selection->selected_at->toISOString(),
             ])->all();
     }

@@ -50,6 +50,7 @@ function mount(path = "/member") {
                     path="invitations"
                     element={<div>Invitations membre</div>}
                   />
+                  <Route path="history" element={<div>Historique membre</div>} />
                 </Route>
               </Routes>
             </MemoryRouter>
@@ -60,7 +61,7 @@ function mount(path = "/member") {
   );
 }
 
-it("provides the three familiar member destinations on mobile and desktop", () => {
+it("keeps three primary member destinations on mobile and desktop", () => {
   mount("/member/profile");
 
   const navigation = screen.getAllByRole("navigation", {
@@ -74,6 +75,7 @@ it("provides the three familiar member destinations on mobile and desktop", () =
   expect(screen.getAllByRole("link", { name: "Mes invitations" })).toHaveLength(
     2,
   );
+  expect(screen.queryByRole("link", { name: "Mon historique" })).toBeNull();
   const profileLinks = screen.getAllByRole("link", { name: "Mon profil" });
   expect(profileLinks).toHaveLength(2);
   expect(

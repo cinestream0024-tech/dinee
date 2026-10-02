@@ -23,9 +23,15 @@ export const profileKeys = {
 };
 
 export const memberProfileKey = ["member", "profile"] as const;
+export const memberHistoryKey = ["member", "history"] as const;
 
 export async function getMemberProfile(): Promise<Profile> {
   return (await api<{ data: Profile }>("/api/v1/member/profile")).data;
+}
+
+export async function getMemberHistory(): Promise<ProfileHistoryEntry[]> {
+  return (await api<{ data: ProfileHistoryEntry[] }>("/api/v1/member/history"))
+    .data;
 }
 
 export async function updateMemberProfile(
@@ -36,6 +42,18 @@ export async function updateMemberProfile(
       "/api/v1/member/profile",
       "PATCH",
       payload,
+    )
+  ).data;
+}
+
+export async function updateMemberAvailability(
+  availability: Availability,
+): Promise<Profile> {
+  return (
+    await apiMutation<{ data: Profile }>(
+      "/api/v1/member/profile",
+      "PATCH",
+      { availability },
     )
   ).data;
 }

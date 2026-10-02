@@ -7,6 +7,7 @@ use App\Http\Requests\UploadMemberProfilePhotoRequest;
 use App\Http\Resources\ProfileResource;
 use App\Models\Profile;
 use App\Services\ProfileService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -20,6 +21,14 @@ class MemberProfileController extends Controller
         Gate::authorize('view', $profile);
 
         return new ProfileResource($profile);
+    }
+
+    public function history(Request $request, ProfileService $service): JsonResponse
+    {
+        $profile = $this->profile($request);
+        Gate::authorize('view', $profile);
+
+        return response()->json(['data' => $service->history($profile)]);
     }
 
     public function update(UpdateMemberProfileRequest $request, ProfileService $service): ProfileResource

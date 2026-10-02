@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
 import { AppWrapper } from "../src/components/common/PageMeta";
@@ -85,6 +86,14 @@ it("shows the member professional profile and privacy context", async () => {
   ).toBe(profile.linkedin_url);
 });
 
+it("shows a labelled loading state while the profile is requested", () => {
+  vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>(() => undefined)));
+
+  mount();
+
+  expect(screen.getByRole("status", { name: "Chargement…" })).toBeTruthy();
+});
+
 it("explains when no profile is linked to the member account", async () => {
   vi.stubGlobal(
     "fetch",
@@ -97,4 +106,70 @@ it("explains when no profile is linked to the member account", async () => {
     "Profil indisponible",
   );
   expect(screen.queryByRole("button", { name: "Réessayer" })).toBeNull();
+});
+
+it("lets the member update their availability", async () => {
+  const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    if (url.endsWith("/sanctum/csrf-cookie"))
+      return new Response(null, { status: 204 });
+    if (url.endsWith("/api/v1/member/profile") && init?.method === "PATCH") {
+      return Response.json({
+        data: { ...profile, availability: "temporarily_unavailable" },
+      });
+    }
+    return Response.json({ data: profile });
+  });
+  vi.stubGlobal("fetch", fetchMock);
+
+  mount();
+
+  const unavailable = await screen.findByRole("radio", {
+    name: "Temporairement indisponible",
+  });
+  await userEvent.click(unavailable);
+
+  await screen.findByText("Votre disponibilité a été enregistrée.");
+  expect((unavailable as HTMLInputElement).checked).toBe(true);
+  await waitFor(() =>
+    expect(
+      fetchMock.mock.calls.some(
+        ([input, init]) =>
+          String(input).endsWith("/api/v1/member/profile") &&
+          init?.method === "PATCH" &&
+          init.body ===
+            JSON.stringify({ availability: "temporarily_unavailable" }),
+      ),
+    ).toBe(true),
+  );
+});
+
+it("keeps the current availability and explains a save failure", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/sanctum/csrf-cookie"))
+        return new Response(null, { status: 204 });
+      if (url.endsWith("/api/v1/member/profile") && init?.method === "PATCH")
+        return Response.json({}, { status: 500 });
+      return Response.json({ data: profile });
+    }),
+  );
+
+  mount();
+
+  await userEvent.click(
+    await screen.findByRole("radio", {
+      name: "Temporairement indisponible",
+    }),
+  );
+
+  expect(
+    await screen.findByText("Une erreur inattendue est survenue. Réessayez."),
+  ).toBeTruthy();
+  expect(
+    (screen.getByRole("radio", { name: "Disponible" }) as HTMLInputElement)
+      .checked,
+  ).toBe(true);
 });

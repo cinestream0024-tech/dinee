@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\Availability;
 use App\Models\Profile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -24,12 +25,22 @@ class MemberProfileApiTest extends TestCase
     {
         $member = User::factory()->create();
         $ownProfile = Profile::factory()->create(['user_id' => $member->id, 'first_name' => 'Patrick']);
-        Profile::factory()->create(['first_name' => 'Sarah']);
+        Profile::factory()->create([
+            'first_name' => 'Sarah',
+            'email' => 'sarah.private@example.test',
+            'phone' => '+243810000777',
+        ]);
 
         $this->actingAs($member)->getJson('/api/v1/member/profile')
             ->assertOk()
+            ->assertHeader('Cache-Control', 'no-store, private')
             ->assertJsonPath('data.id', $ownProfile->id)
-            ->assertJsonPath('data.first_name', 'Patrick');
+            ->assertJsonPath('data.first_name', 'Patrick')
+            ->assertJsonMissingPath('data.user_id')
+            ->assertJsonMissingPath('data.created_by')
+            ->assertJsonMissingPath('data.photo_path')
+            ->assertJsonMissing(['email' => 'sarah.private@example.test'])
+            ->assertJsonMissing(['phone' => '+243810000777']);
     }
 
     public function test_member_can_update_their_profile_with_normalized_contacts(): void
@@ -62,6 +73,31 @@ class MemberProfileApiTest extends TestCase
             'user_id' => User::factory()->create()->id,
             'source' => 'import',
         ])->assertUnprocessable()->assertJsonValidationErrors(['user_id', 'source']);
+    }
+
+    public function test_member_can_update_their_availability_only_with_an_allowed_value(): void
+    {
+        $member = User::factory()->create();
+        $profile = Profile::factory()->create([
+            'user_id' => $member->id,
+            'availability' => Availability::Unspecified,
+        ]);
+        $otherProfile = Profile::factory()->create([
+            'availability' => Availability::Available,
+        ]);
+
+        $this->actingAs($member)->patchJson('/api/v1/member/profile', [
+            'availability' => Availability::TemporarilyUnavailable->value,
+        ])->assertOk()
+            ->assertJsonPath('data.id', $profile->id)
+            ->assertJsonPath('data.availability', Availability::TemporarilyUnavailable->value);
+
+        $this->assertSame(Availability::TemporarilyUnavailable, $profile->fresh()->availability);
+        $this->assertSame(Availability::Available, $otherProfile->fresh()->availability);
+
+        $this->actingAs($member)->patchJson('/api/v1/member/profile', [
+            'availability' => 'sometimes',
+        ])->assertUnprocessable()->assertJsonValidationErrors('availability');
     }
 
     public function test_member_without_a_linked_profile_receives_not_found(): void

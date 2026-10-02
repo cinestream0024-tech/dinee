@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router";
 import MemberProfileHeader from "@/components/member/MemberProfileHeader";
+import MemberAvailabilityCard from "@/components/member/MemberAvailabilityCard";
 import MemberProfileSection from "@/components/member/MemberProfileSection";
 import PageMeta from "@/components/common/PageMeta";
 import { getMemberProfile, memberProfileKey } from "@/features/profiles/api";
@@ -116,6 +117,8 @@ export default function MemberProfilePage() {
       {profileQuery.data && (
         <div className="space-y-5">
           <MemberProfileHeader profile={profileQuery.data} />
+
+          <MemberAvailabilityCard profile={profileQuery.data} />
 
           <div className="grid gap-5 md:grid-cols-3 md:items-start">
             <div className="space-y-5 md:col-span-2">
