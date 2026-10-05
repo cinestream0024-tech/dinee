@@ -7,8 +7,10 @@ use App\Enums\InvitationStatus;
 use App\Models\Event;
 use App\Models\EventSelection;
 use App\Models\Invitation;
+use App\Models\User;
 use App\Support\InvitationToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class PublicInvitationApiTest extends TestCase
@@ -24,6 +26,7 @@ class PublicInvitationApiTest extends TestCase
             ->assertJsonPath('data.status', 'pending')
             ->assertJsonPath('data.event.title', 'DINEE privé')
             ->assertJsonPath('data.event.location', 'Lieu fictif')
+            ->assertJsonPath('data.can_activate_account', false)
             ->assertJsonMissingPath('data.profile')
             ->assertJsonMissingPath('data.selection')
             ->assertJsonMissingPath('data.token_hash')
@@ -41,6 +44,7 @@ class PublicInvitationApiTest extends TestCase
             'response' => 'accepted',
         ])->assertOk()
             ->assertJsonPath('data.status', 'accepted')
+            ->assertJsonPath('data.can_activate_account', true)
             ->assertJsonPath('data.future_interest', null)
             ->json('data.responded_at');
 
@@ -52,6 +56,67 @@ class PublicInvitationApiTest extends TestCase
         $invitation->refresh();
         $this->assertSame(InvitationStatus::Accepted, $invitation->status);
         $this->assertNull($invitation->future_interest);
+    }
+
+    public function test_guest_activates_a_member_account_after_responding_and_is_signed_in(): void
+    {
+        [$token, $invitation] = $this->invitation();
+        $profile = $invitation->selection->profile;
+
+        $this->postJson("/api/v1/public/invitations/{$token}/response", [
+            'response' => 'accepted',
+        ])->assertOk();
+
+        $this->postJson("/api/v1/public/invitations/{$token}/activate", [
+            'email' => 'nouveau.membre@example.test',
+            'password' => 'DineeMembre2026',
+            'password_confirmation' => 'DineeMembre2026',
+        ])->assertCreated()
+            ->assertJsonPath('data.role', 'member')
+            ->assertJsonPath('data.profile_id', $profile->id);
+
+        $user = User::query()->where('email', 'nouveau.membre@example.test')->firstOrFail();
+        $this->assertAuthenticatedAs($user);
+        $this->assertSame($user->id, $profile->fresh()->user_id);
+        $this->assertTrue(Hash::check('DineeMembre2026', $user->password));
+        $this->assertNotNull($invitation->fresh()->token_revoked_at);
+    }
+
+    public function test_account_activation_requires_a_response_and_cannot_be_replayed(): void
+    {
+        [$token, $invitation] = $this->invitation();
+        $initialUserCount = User::query()->count();
+        $payload = [
+            'email' => 'nouveau.membre@example.test',
+            'password' => 'DineeMembre2026',
+            'password_confirmation' => 'DineeMembre2026',
+        ];
+
+        $this->postJson("/api/v1/public/invitations/{$token}/activate", $payload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('invitation');
+        $this->assertDatabaseCount('users', $initialUserCount);
+
+        $invitation->forceFill(['status' => InvitationStatus::Accepted, 'responded_at' => now()])->save();
+        $this->postJson("/api/v1/public/invitations/{$token}/activate", $payload)->assertCreated();
+        $this->postJson("/api/v1/public/invitations/{$token}/activate", $payload)->assertForbidden();
+        $this->assertDatabaseCount('users', $initialUserCount + 1);
+    }
+
+    public function test_authenticated_user_cannot_activate_another_invitation_account(): void
+    {
+        [$token, $invitation] = $this->invitation();
+        $invitation->forceFill(['status' => InvitationStatus::Accepted, 'responded_at' => now()])->save();
+        $existingUser = User::factory()->create();
+
+        $this->actingAs($existingUser)->postJson("/api/v1/public/invitations/{$token}/activate", [
+            'email' => 'autre.membre@example.test',
+            'password' => 'DineeMembre2026',
+            'password_confirmation' => 'DineeMembre2026',
+        ])->assertForbidden();
+
+        $this->assertNull($invitation->selection->profile->fresh()->user_id);
+        $this->assertNull($invitation->fresh()->token_revoked_at);
     }
 
     public function test_decline_requires_future_interest_and_response_can_be_corrected(): void

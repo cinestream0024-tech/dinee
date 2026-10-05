@@ -23,6 +23,8 @@ const publicInvitation = {
   future_interest: null,
   responded_at: null,
   expires_at: "2099-10-18T18:00:00.000000Z",
+  can_activate_account: false,
+  has_member_account: false,
   event: {
     title: "DINEE Finance",
     starts_at: "2099-10-18T18:00:00.000000Z",
@@ -53,6 +55,7 @@ function mountPublic() {
   return providers(
     <Routes>
       <Route path="/invitation/:token" element={<InvitationPage />} />
+      <Route path="/member/profile/edit" element={<p>Profil à compléter</p>} />
     </Routes>,
     "/invitation/secure-token",
   );
@@ -77,6 +80,7 @@ it("accepts a public invitation without an account", async () => {
             ...publicInvitation,
             status: "accepted",
             responded_at: new Date().toISOString(),
+            can_activate_account: true,
           },
         });
       return Response.json({ data: publicInvitation });
@@ -89,6 +93,9 @@ it("accepts a public invitation without an account", async () => {
     await screen.findByRole("button", { name: "Je serai présent" }),
   );
   expect(await screen.findByText("Votre présence est confirmée")).toBeTruthy();
+  expect(
+    screen.getByRole("button", { name: "Activer mon espace DINEE" }),
+  ).toBeTruthy();
   const request = fetcher.mock.calls.find(
     ([, options]) => options?.method === "POST",
   );
@@ -135,6 +142,61 @@ it("records a decline with interest in a future event", async () => {
   expect(JSON.parse(String(request?.[1]?.body))).toEqual({
     response: "declined",
     future_interest: true,
+  });
+});
+
+it("activates a new member account from the invitation without a login", async () => {
+  const fetcher = vi.fn(
+    async (input: RequestInfo | URL, options?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/sanctum/csrf-cookie"))
+        return new Response(null, { status: 204 });
+      if (url.endsWith("/response") && options?.method === "POST")
+        return Response.json({
+          data: {
+            ...publicInvitation,
+            status: "accepted",
+            responded_at: new Date().toISOString(),
+            can_activate_account: true,
+          },
+        });
+      if (url.endsWith("/activate") && options?.method === "POST")
+        return Response.json({
+          data: {
+            id: 12,
+            name: "Patrick Démo",
+            email: "patrick@example.test",
+            role: "member",
+            profile_id: 8,
+          },
+        });
+      return Response.json({ data: publicInvitation });
+    },
+  );
+  vi.stubGlobal("fetch", fetcher);
+  mountPublic();
+
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Je serai présent" }),
+  );
+  await userEvent.click(
+    screen.getByRole("button", { name: "Activer mon espace DINEE" }),
+  );
+  await userEvent.type(screen.getByLabelText("Adresse e-mail"), "patrick@example.test");
+  await userEvent.type(screen.getByLabelText("Créer un mot de passe"), "DineeMembre2026");
+  await userEvent.type(screen.getByLabelText("Confirmer le mot de passe"), "DineeMembre2026");
+  await userEvent.click(
+    screen.getByRole("button", { name: "Activer et compléter mon profil" }),
+  );
+
+  expect(await screen.findByText("Profil à compléter")).toBeTruthy();
+  const activation = fetcher.mock.calls.find(
+    ([input]) => String(input).endsWith("/activate"),
+  );
+  expect(JSON.parse(String(activation?.[1]?.body))).toEqual({
+    email: "patrick@example.test",
+    password: "DineeMembre2026",
+    password_confirmation: "DineeMembre2026",
   });
 });
 

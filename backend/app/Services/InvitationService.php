@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\EventStatus;
 use App\Enums\InvitationStatus;
+use App\Enums\UserRole;
 use App\Models\Event;
 use App\Models\EventSelection;
 use App\Models\Invitation;
@@ -47,7 +48,7 @@ class InvitationService
     public function findPublic(string $plainTextToken): Invitation
     {
         $invitation = $this->findByPlainTextToken($plainTextToken)
-            ->load('selection.event');
+            ->load('selection.event', 'selection.profile');
         $this->assertPubliclyAccessible($invitation, $invitation->selection->event, $invitation->selection);
 
         return $invitation;
@@ -69,7 +70,7 @@ class InvitationService
 
             $normalizedInterest = $status === InvitationStatus::Declined ? $futureInterest : null;
             if ($invitation->status === $status && $invitation->future_interest === $normalizedInterest) {
-                return $invitation->load('selection.event');
+                return $invitation->load('selection.event', 'selection.profile');
             }
 
             $invitation->forceFill([
@@ -78,7 +79,46 @@ class InvitationService
                 'responded_at' => now(),
             ])->save();
 
-            return $invitation->load('selection.event');
+            return $invitation->load('selection.event', 'selection.profile');
+        });
+    }
+
+    public function activateAccount(string $plainTextToken, string $email, string $password): User
+    {
+        if (! InvitationToken::hasValidFormat($plainTextToken)) {
+            abort(404);
+        }
+
+        return DB::transaction(function () use ($plainTextToken, $email, $password) {
+            $snapshot = $this->findByPlainTextToken($plainTextToken);
+            [$event, $selection, $invitation] = $this->lockContext($snapshot);
+            $this->assertPubliclyAccessible($invitation, $event, $selection);
+
+            if (! in_array($invitation->status, [InvitationStatus::Accepted, InvitationStatus::Declined], true)) {
+                throw ValidationException::withMessages(['invitation' => ['response_required']]);
+            }
+
+            $profile = Profile::lockForUpdate()->findOrFail($selection->profile_id);
+            if ($profile->user_id) {
+                throw ValidationException::withMessages(['invitation' => ['account_already_active']]);
+            }
+            if (User::query()->where('email', $email)->exists()) {
+                throw ValidationException::withMessages(['email' => ['email_already_used']]);
+            }
+            if (Profile::query()->where('email', $email)->whereKeyNot($profile->id)->exists()) {
+                throw ValidationException::withMessages(['email' => ['email_already_used']]);
+            }
+
+            $user = User::query()->forceCreate([
+                'name' => trim($profile->first_name.' '.$profile->last_name),
+                'email' => $email,
+                'password' => $password,
+                'role' => UserRole::Member,
+            ]);
+            $profile->forceFill(['user_id' => $user->id, 'email' => $email])->save();
+            $invitation->forceFill(['token_revoked_at' => now()])->save();
+
+            return $user;
         });
     }
 

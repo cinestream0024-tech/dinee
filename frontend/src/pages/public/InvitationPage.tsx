@@ -5,6 +5,7 @@ import { Link, useParams } from "react-router";
 import { MutationError } from "@/components/admin/AsyncState";
 import { apiErrorMessageKey } from "@/components/admin/apiErrors";
 import PageMeta from "@/components/common/PageMeta";
+import InvitationAccountActivation from "@/components/invitations/InvitationAccountActivation";
 import {
   getPublicInvitation,
   invitationKeys,
@@ -23,6 +24,7 @@ export default function InvitationPage() {
   const { token = "" } = useParams();
   const client = useQueryClient();
   const [declining, setDeclining] = useState(false);
+  const [activatingAccount, setActivatingAccount] = useState(false);
   const query = useQuery({
     queryKey: invitationKeys.public(token),
     queryFn: () => getPublicInvitation(token),
@@ -244,7 +246,25 @@ export default function InvitationPage() {
               </div>
             )}
 
-            {invitation.status !== "pending" && (
+            {invitation.status !== "pending" &&
+              invitation.can_activate_account &&
+              !activatingAccount && (
+                <button
+                  type="button"
+                  onClick={() => setActivatingAccount(true)}
+                  className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-brand-500 px-4 text-sm font-semibold text-white shadow-theme-sm hover:bg-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
+                >
+                  {t("dinee.activateMemberSpace")}
+                </button>
+              )}
+
+            {invitation.status !== "pending" &&
+              invitation.can_activate_account &&
+              activatingAccount && (
+                <InvitationAccountActivation token={token} />
+              )}
+
+            {invitation.status !== "pending" && invitation.has_member_account && (
               <Link
                 to="/login"
                 className="inline-flex min-h-11 w-full items-center justify-center rounded-xl px-4 text-sm font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10"

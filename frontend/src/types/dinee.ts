@@ -137,6 +137,8 @@ export interface PublicInvitation {
   future_interest: boolean | null;
   responded_at: string | null;
   expires_at: string;
+  can_activate_account: boolean;
+  has_member_account: boolean;
   event: {
     title: string;
     starts_at: string | null;

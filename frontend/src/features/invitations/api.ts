@@ -8,6 +8,7 @@ import type {
   PublicInvitation,
   PublicInvitationResponsePayload,
 } from "@/types/dinee";
+import type { CurrentUser } from "@/types/auth";
 
 export interface InvitationFilters {
   status?: InvitationStatus | "";
@@ -128,6 +129,21 @@ export function respondToInvitation(
 ): Promise<{ data: PublicInvitation }> {
   return apiMutation(
     `/api/v1/public/invitations/${encodeURIComponent(token)}/response`,
+    "POST",
+    payload,
+  );
+}
+
+export function activateInvitationAccount(
+  token: string,
+  payload: {
+    email: string;
+    password: string;
+    password_confirmation: string;
+  },
+): Promise<{ data: CurrentUser }> {
+  return apiMutation(
+    `/api/v1/public/invitations/${encodeURIComponent(token)}/activate`,
     "POST",
     payload,
   );
