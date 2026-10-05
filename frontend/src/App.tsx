@@ -26,6 +26,9 @@ const MemberHistoryPage = lazy(
 const MemberInvitationsPage = lazy(
   () => import("@/pages/member/MemberInvitationsPage"),
 );
+const OnboardingWelcomePage = lazy(
+  () => import("@/pages/member/OnboardingWelcomePage"),
+);
 
 function RouteFallback() {
   const { t } = useTranslation();
@@ -92,6 +95,14 @@ export default function App() {
         </Route>
 
         <Route element={<RequireRole role="member" />}>
+          <Route
+            path="/onboarding"
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <OnboardingWelcomePage />
+              </Suspense>
+            }
+          />
           <Route path="/member" element={<MemberLayout />}>
             <Route index element={<MemberHomePage />} />
             <Route

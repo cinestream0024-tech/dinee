@@ -31,7 +31,7 @@ export default function InvitationAccountActivation({
       }),
     onSuccess: ({ data }) => {
       client.setQueryData(sessionKey, data);
-      navigate("/member/profile/edit", { replace: true });
+      navigate("/onboarding", { replace: true });
     },
   });
 

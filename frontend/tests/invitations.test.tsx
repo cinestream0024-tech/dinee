@@ -55,7 +55,7 @@ function mountPublic() {
   return providers(
     <Routes>
       <Route path="/invitation/:token" element={<InvitationPage />} />
-      <Route path="/member/profile/edit" element={<p>Profil à compléter</p>} />
+      <Route path="/onboarding" element={<p>Bienvenue dans Le DINEE</p>} />
     </Routes>,
     "/invitation/secure-token",
   );
@@ -189,7 +189,7 @@ it("activates a new member account from the invitation without a login", async (
     screen.getByRole("button", { name: "Activer et compléter mon profil" }),
   );
 
-  expect(await screen.findByText("Profil à compléter")).toBeTruthy();
+  expect(await screen.findByText("Bienvenue dans Le DINEE")).toBeTruthy();
   const activation = fetcher.mock.calls.find(
     ([input]) => String(input).endsWith("/activate"),
   );
