@@ -3,11 +3,13 @@ import { useTranslation } from "react-i18next";
 interface OnboardingProgressProps {
   current: number;
   total: number;
+  label: string;
 }
 
 export default function OnboardingProgress({
   current,
   total,
+  label,
 }: OnboardingProgressProps) {
   const { t } = useTranslation();
   const percentage = Math.round((current / total) * 100);
@@ -15,7 +17,7 @@ export default function OnboardingProgress({
   return (
     <div className="w-full" aria-label={t("dinee.onboardingProgressLabel")}>
       <div className="mb-2 flex items-center justify-between gap-4 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-        <span>{t("dinee.onboardingWelcomeStep")}</span>
+        <span>{label}</span>
         <span>{t("dinee.onboardingStepCount", { current, total })}</span>
       </div>
       <div

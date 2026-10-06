@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import PageMeta from "@/components/common/PageMeta";
-import { ThemeToggleButton } from "@/components/common/ThemeToggleButton";
+import OnboardingBrandHeader from "@/components/onboarding/OnboardingBrandHeader";
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
 import OnboardingStepList from "@/components/onboarding/OnboardingStepList";
 import { useSession } from "@/features/auth/auth";
@@ -20,15 +20,14 @@ export default function OnboardingWelcomePage() {
       />
 
       <div className="min-h-dvh bg-gray-25 text-gray-950 dark:bg-gray-950 dark:text-white">
-        <header className="mx-auto flex h-18 w-full max-w-3xl items-center justify-between px-5 sm:px-8">
-          <span className="text-lg font-semibold tracking-tight">
-            {t("dinee.brand")}
-          </span>
-          <ThemeToggleButton />
-        </header>
+        <OnboardingBrandHeader />
 
-        <main className="mx-auto flex w-full max-w-xl flex-col px-5 pb-8 pt-5 sm:px-8 sm:pb-12 sm:pt-10">
-          <OnboardingProgress current={1} total={4} />
+        <main className="onboarding-reveal mx-auto flex w-full max-w-xl flex-col px-5 pb-8 pt-5 sm:px-8 sm:pb-12 sm:pt-10">
+          <OnboardingProgress
+            current={1}
+            total={4}
+            label={t("dinee.onboardingWelcomeStep")}
+          />
 
           <section className="mt-10 sm:mt-14">
             <span className="flex size-16 items-center justify-center rounded-full bg-success-50 text-success-600 ring-1 ring-success-100 ring-inset dark:bg-success-500/15 dark:text-success-400 dark:ring-success-500/20">
@@ -53,7 +52,7 @@ export default function OnboardingWelcomePage() {
 
           <div className="mt-8 sm:mt-10">
             <Link
-              to="/member/profile/edit"
+              to="/onboarding/profile"
               className="flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-gray-950 px-6 text-base font-semibold text-white shadow-theme-sm transition-colors hover:bg-gray-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-100"
             >
               {t("dinee.onboardingStart")}

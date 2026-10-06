@@ -8,6 +8,7 @@ import {
   removeMemberProfilePhoto,
   uploadMemberProfilePhoto,
 } from "@/features/profiles/api";
+import { UploadIcon } from "@/icons";
 import type { Profile } from "@/types/dinee";
 
 const acceptedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -15,8 +16,10 @@ const maxBytes = 5 * 1024 * 1024;
 
 export default function MemberProfilePhotoEditor({
   profile,
+  variant = "default",
 }: {
   profile: Profile;
+  variant?: "default" | "onboarding";
 }) {
   const { t } = useTranslation();
   const client = useQueryClient();
@@ -77,7 +80,13 @@ export default function MemberProfilePhotoEditor({
   };
 
   return (
-    <section className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+    <section
+      className={
+        variant === "onboarding"
+          ? "rounded-3xl border border-gray-200 bg-white p-5 shadow-theme-xs sm:p-7 dark:border-gray-800 dark:bg-white/3"
+          : "rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]"
+      }
+    >
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
         <ProfileAvatar
           firstName={profile.first_name}
@@ -112,6 +121,9 @@ export default function MemberProfilePhotoEditor({
               onClick={() => inputRef.current?.click()}
               className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-500 px-4 text-sm font-medium text-white hover:bg-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 disabled:cursor-not-allowed disabled:opacity-60"
             >
+              {!upload.isPending && (
+                <UploadIcon aria-hidden="true" className="me-2 size-4" />
+              )}
               {upload.isPending
                 ? t("dinee.uploadingPhoto")
                 : t(profile.photo_url ? "dinee.changePhoto" : "dinee.addPhoto")}

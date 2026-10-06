@@ -35,7 +35,7 @@ export async function getMemberHistory(): Promise<ProfileHistoryEntry[]> {
 }
 
 export async function updateMemberProfile(
-  payload: Omit<ProfilePayload, "availability">,
+  payload: Partial<Omit<ProfilePayload, "availability">>,
 ): Promise<Profile> {
   return (
     await apiMutation<{ data: Profile }>(
