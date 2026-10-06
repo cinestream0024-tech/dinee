@@ -223,7 +223,7 @@ export default function OnboardingProfileForm({ profile }: { profile: Profile })
             className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-3 text-sm font-semibold text-gray-600 hover:text-gray-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:text-gray-400 dark:hover:text-white"
           >
             <DineeChevronLeftIcon aria-hidden="true" className="size-4 rtl:rotate-180" />
-            {t("dinee.back")}
+            {t("dinee.onboardingBack")}
           </Link>
           <button
             type="submit"
