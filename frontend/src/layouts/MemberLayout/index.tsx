@@ -15,9 +15,18 @@ export default function MemberLayout() {
       <header className="sticky top-0 z-99 border-b border-gray-200 bg-white/95 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-950/95">
         <div className="mx-auto flex h-16 max-w-4xl items-center justify-between gap-4 px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-8">
-            <span className="shrink-0 text-lg font-semibold tracking-tight text-gray-950 dark:text-white">
-              {t("dinee.brand")}
-            </span>
+            <div className="flex shrink-0 items-center gap-2.5">
+              <img
+                src="/images/image-gen-3.png"
+                alt=""
+                width="36"
+                height="36"
+                className="size-9 rounded-xl object-cover shadow-theme-xs"
+              />
+              <span className="hidden text-lg font-semibold tracking-tight text-gray-950 2xsm:inline dark:text-white">
+                {t("dinee.brand")}
+              </span>
+            </div>
             {!editingProfile && <MemberNavigation variant="desktop" />}
           </div>
           <div className="flex shrink-0 items-center gap-2">
