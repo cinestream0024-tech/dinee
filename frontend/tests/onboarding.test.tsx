@@ -8,6 +8,7 @@ import { LanguageProvider } from "../src/context/LanguageContext";
 import { ThemeProvider } from "../src/context/ThemeContext";
 import OnboardingWelcomePage from "../src/pages/member/OnboardingWelcomePage";
 import OnboardingProfilePage from "../src/pages/member/OnboardingProfilePage";
+import OnboardingIntentionsPage from "../src/pages/member/OnboardingIntentionsPage";
 import i18n from "../src/i18n";
 import type { Profile } from "../src/types/dinee";
 
@@ -130,7 +131,10 @@ it("lets the member complete the professional profile step", async () => {
                   path="/onboarding/profile"
                   element={<OnboardingProfilePage />}
                 />
-                <Route path="/member/profile" element={<p>Profil enregistré</p>} />
+                <Route
+                  path="/onboarding/intentions"
+                  element={<p>Étape intentions</p>}
+                />
               </Routes>
             </MemoryRouter>
           </AppWrapper>
@@ -150,13 +154,71 @@ it("lets the member complete the professional profile step", async () => {
     screen.getByRole("button", { name: "Suivant" }),
   );
 
-  expect(await screen.findByText("Profil enregistré")).toBeTruthy();
+  expect(await screen.findByText("Étape intentions")).toBeTruthy();
   expect(
     fetchMock.mock.calls.some(
       ([input, init]) =>
         String(input).endsWith("/api/v1/member/profile") &&
         init?.method === "PATCH" &&
         String(init.body).includes('"company":"Kivu Ventures"'),
+    ),
+  ).toBe(true);
+});
+
+it("lets the member save their professional intentions", async () => {
+  const fetchMock = vi.fn(
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/sanctum/csrf-cookie")) {
+        return new Response(null, { status: 204 });
+      }
+      if (url.endsWith("/api/v1/member/profile") && init?.method === "PATCH") {
+        const updates = JSON.parse(String(init.body));
+        return Response.json({ data: { ...profile, ...updates } });
+      }
+      return Response.json({ data: profile });
+    },
+  );
+  vi.stubGlobal("fetch", fetchMock);
+
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  render(
+    <QueryClientProvider client={client}>
+      <ThemeProvider>
+        <LanguageProvider>
+          <AppWrapper>
+            <MemoryRouter initialEntries={["/onboarding/intentions"]}>
+              <Routes>
+                <Route
+                  path="/onboarding/intentions"
+                  element={<OnboardingIntentionsPage />}
+                />
+                <Route path="/member/profile" element={<p>Intentions enregistrées</p>} />
+              </Routes>
+            </MemoryRouter>
+          </AppWrapper>
+        </LanguageProvider>
+      </ThemeProvider>
+    </QueryClientProvider>,
+  );
+
+  expect(await screen.findByRole("heading", { name: "Vos intentions" })).toBeTruthy();
+  expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("3");
+  await userEvent.type(
+    await screen.findByLabelText("Ce que vous recherchez"),
+    "Des partenaires stratégiques",
+  );
+  await userEvent.click(screen.getByRole("button", { name: "Suivant" }));
+
+  expect(await screen.findByText("Intentions enregistrées")).toBeTruthy();
+  expect(
+    fetchMock.mock.calls.some(
+      ([input, init]) =>
+        String(input).endsWith("/api/v1/member/profile") &&
+        init?.method === "PATCH" &&
+        String(init.body).includes("Des partenaires stratégiques"),
     ),
   ).toBe(true);
 });

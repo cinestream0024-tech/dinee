@@ -32,6 +32,9 @@ const OnboardingWelcomePage = lazy(
 const OnboardingProfilePage = lazy(
   () => import("@/pages/member/OnboardingProfilePage"),
 );
+const OnboardingIntentionsPage = lazy(
+  () => import("@/pages/member/OnboardingIntentionsPage"),
+);
 
 function RouteFallback() {
   const { t } = useTranslation();
@@ -111,6 +114,14 @@ export default function App() {
             element={
               <Suspense fallback={<RouteFallback />}>
                 <OnboardingProfilePage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/onboarding/intentions"
+            element={
+              <Suspense fallback={<RouteFallback />}>
+                <OnboardingIntentionsPage />
               </Suspense>
             }
           />
