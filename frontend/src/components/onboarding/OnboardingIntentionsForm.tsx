@@ -34,9 +34,8 @@ export default function OnboardingIntentionsForm({ profile }: { profile: Profile
     mutationFn: updateMemberProfile,
     onSuccess: (updatedProfile) => {
       client.setQueryData(memberProfileKey, updatedProfile);
-      navigate("/member/profile", {
+      navigate("/onboarding/preferences", {
         replace: true,
-        state: { profileUpdated: true },
       });
     },
   });
