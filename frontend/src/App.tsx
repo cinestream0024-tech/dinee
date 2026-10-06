@@ -13,6 +13,9 @@ import { useTranslation } from "react-i18next";
 const EventsPage = lazy(() => import("@/pages/admin/EventsPage"));
 const NetworkPage = lazy(() => import("@/pages/admin/NetworkPage"));
 const InvitationsPage = lazy(() => import("@/pages/admin/InvitationsPage"));
+const RecommendationsPage = lazy(
+  () => import("@/pages/admin/RecommendationsPage"),
+);
 const InvitationPage = lazy(() => import("@/pages/public/InvitationPage"));
 const MemberProfilePage = lazy(
   () => import("@/pages/member/MemberProfilePage"),
@@ -25,6 +28,9 @@ const MemberHistoryPage = lazy(
 );
 const MemberInvitationsPage = lazy(
   () => import("@/pages/member/MemberInvitationsPage"),
+);
+const MemberRecommendationsPage = lazy(
+  () => import("@/pages/member/MemberRecommendationsPage"),
 );
 const OnboardingWelcomePage = lazy(
   () => import("@/pages/member/OnboardingWelcomePage"),
@@ -103,6 +109,14 @@ export default function App() {
                 </Suspense>
               }
             />
+            <Route
+              path="recommendations"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <RecommendationsPage />
+                </Suspense>
+              }
+            />
           </Route>
         </Route>
 
@@ -178,6 +192,14 @@ export default function App() {
               element={
                 <Suspense fallback={<RouteFallback />}>
                   <MemberHistoryPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="recommendations"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <MemberRecommendationsPage />
                 </Suspense>
               }
             />

@@ -5,6 +5,7 @@ import {
   DineeUsersIcon,
   DineeMoreIcon,
   DineeSendIcon,
+  DineeAddUserIcon,
 } from "@/icons";
 import { cn } from "@/utils";
 import { useEffect } from "react";
@@ -19,6 +20,12 @@ const items = [
     to: "/admin/invitations",
     key: "invitations",
     Icon: DineeSendIcon,
+    end: false,
+  },
+  {
+    to: "/admin/recommendations",
+    key: "recommendations",
+    Icon: DineeAddUserIcon,
     end: false,
   },
 ] as const;

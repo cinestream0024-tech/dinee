@@ -169,3 +169,39 @@ export interface MemberInvitation {
     status: EventStatus;
   };
 }
+
+export type RecommendationStatus = "pending" | "accepted" | "rejected";
+
+export interface Recommendation {
+  id: number;
+  name: string;
+  job_title: string;
+  company: string;
+  email: string | null;
+  phone: string | null;
+  linkedin_url: string | null;
+  reason: string;
+  status: RecommendationStatus;
+  created_at: string;
+  reviewed_at: string | null;
+}
+
+export interface AdminRecommendation extends Recommendation {
+  recommender: { id: number; name: string; company: string | null };
+  recommended_profile: { id: number; name: string } | null;
+  potential_duplicates: Array<{
+    id: number;
+    name: string;
+    company: string | null;
+  }>;
+}
+
+export interface RecommendationPayload {
+  name: string;
+  job_title: string;
+  company: string;
+  email: string | null;
+  phone: string | null;
+  linkedin_url: string | null;
+  reason: string;
+}

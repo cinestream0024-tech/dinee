@@ -15,7 +15,7 @@ import {
   memberHistoryKey,
   memberProfileKey,
 } from "@/features/profiles/api";
-import { DineeArrowRightIcon } from "@/icons";
+import { DineeAddUserIcon, DineeArrowRightIcon } from "@/icons";
 
 export default function MemberHomePage() {
   const { t } = useTranslation();
@@ -97,6 +97,18 @@ export default function MemberHomePage() {
           <DineeArrowRightIcon aria-hidden="true" className="size-5 rtl:rotate-180" />
         </Link>
       </section>
+
+      <Link
+        to="/member/recommendations"
+        className="mt-6 flex min-h-16 items-center gap-4 rounded-2xl bg-brand-50 px-4 text-brand-800 transition-colors hover:bg-brand-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:bg-brand-500/10 dark:text-brand-200 dark:hover:bg-brand-500/15"
+      >
+        <DineeAddUserIcon aria-hidden="true" className="size-6 shrink-0" />
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">{t("dinee.recommendSomeone")}</span>
+          <span className="mt-0.5 block text-sm font-normal opacity-75">{t("dinee.recommendationHomeDescription")}</span>
+        </span>
+        <DineeArrowRightIcon aria-hidden="true" className="size-5 shrink-0 rtl:rotate-180" />
+      </Link>
 
       <div className="mt-8">
         <MemberHomeActivity entries={recentHistory} />
