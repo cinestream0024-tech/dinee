@@ -4,15 +4,42 @@ interface OnboardingProgressProps {
   current: number;
   total: number;
   label: string;
+  variant?: "bar" | "dots";
 }
 
 export default function OnboardingProgress({
   current,
   total,
   label,
+  variant = "bar",
 }: OnboardingProgressProps) {
   const { t } = useTranslation();
   const percentage = Math.round((current / total) * 100);
+
+  if (variant === "dots") {
+    return (
+      <div
+        role="progressbar"
+        aria-label={`${label} · ${t("dinee.onboardingStepCount", { current, total })}`}
+        aria-valuemin={1}
+        aria-valuemax={total}
+        aria-valuenow={current}
+        className="flex items-center justify-center gap-2"
+      >
+        {Array.from({ length: total }, (_, index) => (
+          <span
+            key={index}
+            aria-hidden="true"
+            className={`h-2 rounded-full transition-all duration-500 motion-reduce:transition-none ${
+              index + 1 === current
+                ? "w-6 bg-brand-500"
+                : "w-2 bg-gray-200 dark:bg-gray-700"
+            }`}
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="w-full" aria-label={t("dinee.onboardingProgressLabel")}>

@@ -89,9 +89,10 @@ it("welcomes the new member and explains the setup before continuing", async () 
   const progress = screen.getByRole("progressbar");
   expect(progress.getAttribute("aria-valuenow")).toBe("1");
   expect(progress.getAttribute("aria-valuemax")).toBe("4");
-  expect(screen.getByText("Votre profil professionnel")).toBeTruthy();
-  expect(screen.getByText("Vos intentions")).toBeTruthy();
-  expect(screen.getByText("Vos préférences")).toBeTruthy();
+  expect(screen.getByText("Invitation confirmée")).toBeTruthy();
+  expect(
+    screen.getByText(/Quelques étapes simples nous permettront/),
+  ).toBeTruthy();
 
   await userEvent.click(
     screen.getByRole("link", { name: "Commencer la configuration" }),

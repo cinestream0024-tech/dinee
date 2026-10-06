@@ -1147,3 +1147,33 @@ pre[class*="language-"].line-numbers {
     animation: none;
   }
 }
+
+@keyframes onboarding-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -0.5rem;
+  }
+}
+
+.onboarding-float {
+  animation: onboarding-float 5s ease-in-out infinite;
+}
+
+.onboarding-float-delayed {
+  animation: onboarding-float 6s 600ms ease-in-out infinite;
+}
+
+.onboarding-float-slow {
+  animation: onboarding-float 7s 300ms ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-float,
+  .onboarding-float-delayed,
+  .onboarding-float-slow {
+    animation: none;
+  }
+}
