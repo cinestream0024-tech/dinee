@@ -83,7 +83,7 @@ export default function MemberProfilePhotoEditor({
     <section
       className={
         variant === "onboarding"
-          ? "rounded-3xl border border-gray-200 bg-white p-5 shadow-theme-xs sm:p-7 dark:border-gray-800 dark:bg-white/3"
+          ? "py-2 sm:py-3"
           : "rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]"
       }
     >

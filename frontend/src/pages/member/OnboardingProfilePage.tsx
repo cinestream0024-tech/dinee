@@ -31,11 +31,8 @@ export default function OnboardingProfilePage() {
             label={t("dinee.onboardingProfileStep")}
           />
 
-          <section className="mb-8 mt-9 sm:mt-12">
-            <p className="text-sm font-semibold text-brand-600 dark:text-brand-400">
-              {t("dinee.onboardingProfileEyebrow")}
-            </p>
-            <h1 className="mt-2 text-title-sm font-semibold tracking-tight text-gray-950 sm:text-title-md dark:text-white">
+          <section className="mb-7 mt-7 sm:mt-10">
+            <h1 className="text-title-sm font-semibold tracking-tight text-gray-950 sm:text-title-md dark:text-white">
               {t("dinee.onboardingProfileTitle")}
             </h1>
             <p className="mt-3 max-w-xl text-base leading-7 text-gray-600 dark:text-gray-300">

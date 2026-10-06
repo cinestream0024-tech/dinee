@@ -54,9 +54,6 @@ export default function OnboardingWelcomePage() {
                 className="size-5 rtl:rotate-180"
               />
             </Link>
-            <p className="mt-3 text-center text-theme-xs leading-5 text-gray-500 dark:text-gray-400">
-              {t("dinee.onboardingTimeEstimate")}
-            </p>
           </div>
         </main>
       </div>

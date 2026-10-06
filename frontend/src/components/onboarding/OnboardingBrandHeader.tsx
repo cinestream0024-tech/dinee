@@ -12,7 +12,7 @@ export default function OnboardingBrandHeader() {
           alt=""
           width="44"
           height="44"
-          className="size-11 rounded-2xl object-cover shadow-theme-sm ring-1 ring-gray-950/10 dark:ring-white/15"
+          className="size-11 rounded-2xl object-cover shadow-theme-sm"
         />
         <span className="text-lg font-semibold tracking-tight text-gray-950 dark:text-white">
           {t("dinee.brand")}

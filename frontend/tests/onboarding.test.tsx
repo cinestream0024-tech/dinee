@@ -89,13 +89,13 @@ it("welcomes the new member and explains the setup before continuing", async () 
   const progress = screen.getByRole("progressbar");
   expect(progress.getAttribute("aria-valuenow")).toBe("1");
   expect(progress.getAttribute("aria-valuemax")).toBe("4");
-  expect(screen.getByText("Invitation confirmée")).toBeTruthy();
+  expect(screen.queryByText("Invitation confirmée")).toBeNull();
   expect(
     screen.getByText(/Quelques étapes simples nous permettront/),
   ).toBeTruthy();
 
   await userEvent.click(
-    screen.getByRole("link", { name: "Commencer la configuration" }),
+    screen.getByRole("link", { name: "Suivant" }),
   );
   expect(await screen.findByText("Étape profil")).toBeTruthy();
 });
@@ -147,7 +147,7 @@ it("lets the member complete the professional profile step", async () => {
   await userEvent.clear(company);
   await userEvent.type(company, "Kivu Ventures");
   await userEvent.click(
-    screen.getByRole("button", { name: "Enregistrer et continuer" }),
+    screen.getByRole("button", { name: "Suivant" }),
   );
 
   expect(await screen.findByText("Profil enregistré")).toBeTruthy();
